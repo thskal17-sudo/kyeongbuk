@@ -1,0 +1,5831 @@
+# 부산 강사 구인공고 수집 대상 목록
+#
+# - phase: 구현 단계. max_phase 이하이면서 enabled: true 인 소스만 매일 수집한다.
+#     1단계 교육청·학교와 국가 공공기관 / 2단계 지자체·공단(체육시설) / 3단계 평생학습·도서관·청소년·여성·시 출연기관
+# - verified: GitHub Actions 러너에서 실제 접속·목록 구조를 확인한 소스.
+# - keyword_filter: 강사 전용 게시판이면 false (모든 글 수집), 일반 게시판이면 true (강사 키워드로 거름).
+# - options: 수집기별 설정 (page_param: 페이지 번호 파라미터, key_param: 게시글 번호 파라미터 등).
+#   자세한 설명은 src/gyeongbuk_jobs/collectors/board.py 머리말 참고.
+# - 해외 서버(GitHub 러너) 접속을 막는 사이트는 enabled: false 로 두고 blocked 에 까닭을 적었다.
+#
+# 새 소스를 추가할 때는 먼저 진단 도구로 구조를 확인한다:
+#   GitHub Actions > 사이트 진단 (probe) > Run workflow > args: --no-reach --parse --url <목록 주소>
+# 대학 부설 평생교육원은 다른 저장소(lifelong-education-pyengsang-)도 모으지만, 부산 강사 공고를 한 메일로 받도록 여기에도 넣었다.
+
+max_phase: 3
+
+sources:
+  # ─────────────────────────────── 국가·공공 (공식 API·통합 채용 사이트)
+  - id: work24_api
+    name: 고용24(워크넷) 채용정보 Open API
+    org_type: 국가·공공기관
+    district: 부산전체
+    collector: work24_api
+    url: https://www.work24.go.kr/cm/e/a/0110/selectOpenApiIntro.do
+    params:
+      region: "26000"   # 부산광역시 전체
+      keyword: 강사
+    auth_env: WORK24_API_KEY  # 없으면 '설정필요'로 표시하고 건너뜀
+    keyword_filter: true
+    phase: 1
+    enabled: true
+    verified: false
+
+  - id: gojobs_list
+    name: 나라일터 모집공고 (기관명에 '부산' 포함)
+    org_type: 국가·공공기관
+    district: 부산전체
+    collector: generic_board
+    # 기관명 검색(searchSelectninsttnm=부산)은 GET 으로 되고, 부산 소재 국가기관·지자체·교육청·학교 공고가 나온다
+    url: https://www.gojobs.go.kr/apmList.do?menuNo=401&searchJobsecode=020&searchSelectninsttnm=%EB%B6%80%EC%82%B0&pageIndex=1
+    pages: 1  # 2쪽은 POST 전용
+    keyword_filter: true
+    phase: 1
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://www.gojobs.go.kr/apmView.do?empmnsn={1}&searchJobsecode={0}&menuNo=401&selMenuNo=400"
+      key_param: empmnsn
+
+  - id: alio_recruit
+    name: 잡알리오 공공기관 채용정보 (근무지 부산)
+    org_type: 국가·공공기관
+    district: 부산전체
+    collector: form_board  # 목록은 검색 폼(_csrf 토큰)을 POST 해야 나온다
+    url: https://job.alio.go.kr/recruit.do
+    pages: 2
+    keyword_filter: true
+    phase: 1
+    enabled: true
+    verified: true
+    options:
+      form_selector: "form#frm"
+      data:
+        search_yn: "Y"
+        location: R3014  # 부산광역시 (검색 폼의 근무지 선택값)
+      page_param: pageNo
+      key_param: idx
+
+  # ─────────────────────────────── 교육청·학교
+  # 부산교육청 게시판(na/ntt)은 제목 링크가 <a class="nttInfoBtn" data-id="글번호"> 이고 상세는 selectNttInfo.do 로 GET 으로 열린다
+  - id: pen_school_hire
+    name: 부산교육청 학교인력채용 (학교 강사·시간강사 구인)
+    org_type: 교육청·학교
+    district: 부산전체
+    collector: generic_board
+    url: https://www.pen.go.kr/main/na/ntt/selectNttList.do?mi=30367&bbsId=2364
+    pages: 3  # 하루 10~20건이 올라와서 매일 3쪽을 본다
+    keyword_filter: true  # 기간제교사·조리실무사 등도 올라오는 게시판이라 강사 공고만 거름
+    phase: 1
+    enabled: true
+    verified: true
+    options:
+      page_param: currPage
+      link_attr: data-id
+      link_template: "https://www.pen.go.kr/main/na/ntt/selectNttInfo.do?mi=30367&bbsId=2364&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산광역시교육청
+
+  - id: pen_gosi
+    name: 부산교육청 고시·공고 (운동부지도강사 등)
+    org_type: 교육청·학교
+    district: 부산전체
+    collector: generic_board
+    url: https://www.pen.go.kr/main/na/ntt/selectNttList.do?mi=30361&bbsId=2342
+    pages: 1
+    keyword_filter: true
+    phase: 1
+    enabled: true
+    verified: true
+    options:
+      page_param: currPage
+      link_attr: data-id
+      link_template: "https://www.pen.go.kr/main/na/ntt/selectNttInfo.do?mi=30361&bbsId=2342&nttSn={0}"
+      key_param: nttSn
+      org_prefix: 부산광역시교육청  # 작성자 칸이 담당 부서(인성체육급식과 등)
+
+  - id: pen_kinder_hire
+    name: 부산교육청 유치원 인력 구인
+    org_type: 교육청·학교
+    district: 부산전체
+    collector: generic_board
+    url: https://www.pen.go.kr/main/na/ntt/selectNttList.do?mi=30370&bbsId=2377
+    pages: 1
+    keyword_filter: true
+    phase: 1
+    enabled: true
+    verified: true
+    options:
+      page_param: currPage
+      link_attr: data-id
+      link_template: "https://www.pen.go.kr/main/na/ntt/selectNttInfo.do?mi=30370&bbsId=2377&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산광역시교육청
+
+  - id: afterschool_private
+    name: 부산늘봄지원센터 - 개인위탁 강사 모집공고
+    org_type: 교육청·학교
+    district: 부산전체
+    collector: generic_board
+    url: https://home.pen.go.kr/afterschool/na/ntt/selectNttList.do?mi=14360&bbsId=4177
+    pages: 2
+    keyword_filter: false  # 학교 방과후·늘봄 개인위탁 강사 모집만 올라오는 게시판
+    phase: 1
+    enabled: true
+    verified: true
+    options:
+      page_param: currPage
+      link_attr: data-id
+      link_template: "https://home.pen.go.kr/afterschool/na/ntt/selectNttInfo.do?mi=14360&bbsId=4177&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산늘봄지원센터
+
+  - id: afterschool_company
+    name: 부산늘봄지원센터 - 업체위탁 모집공고
+    org_type: 교육청·학교
+    district: 부산전체
+    collector: generic_board
+    url: https://home.pen.go.kr/afterschool/na/ntt/selectNttList.do?mi=14361&bbsId=4178
+    pages: 1
+    keyword_filter: true
+    phase: 1
+    enabled: true
+    verified: true
+    options:
+      page_param: currPage
+      link_attr: data-id
+      link_template: "https://home.pen.go.kr/afterschool/na/ntt/selectNttInfo.do?mi=14361&bbsId=4178&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산늘봄지원센터
+
+  # 5개 교육지원청 학교인력채용 (관할 학교의 구인 공고)
+  - id: seobu_edu_hire
+    name: 서부교육지원청 학교인력채용
+    org_type: 교육청·학교
+    district: 부산전체  # 서구·사하구·사상구·강서구 (학교 이름으로 구를 알 수 없어 전체로 둠)
+    collector: generic_board
+    url: https://home.pen.go.kr/seobu/na/ntt/selectNttList.do?mi=15979&bbsId=4754
+    pages: 1
+    keyword_filter: true
+    phase: 1
+    enabled: true
+    verified: true
+    options:
+      page_param: currPage
+      link_attr: data-id
+      link_template: "https://home.pen.go.kr/seobu/na/ntt/selectNttInfo.do?mi=15979&bbsId=4754&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산광역시서부교육지원청
+
+  - id: nambu_edu_hire
+    name: 남부교육지원청 학교인력채용
+    org_type: 교육청·학교
+    district: 부산전체
+    collector: generic_board
+    url: https://home.pen.go.kr/nambu/na/ntt/selectNttList.do?mi=11873&bbsId=3845
+    pages: 1
+    keyword_filter: true
+    phase: 1
+    enabled: true
+    verified: true
+    options:
+      page_param: currPage
+      link_attr: data-id
+      link_template: "https://home.pen.go.kr/nambu/na/ntt/selectNttInfo.do?mi=11873&bbsId=3845&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산광역시남부교육지원청
+
+  - id: bukbu_edu_hire
+    name: 북부교육지원청 학교인력채용
+    org_type: 교육청·학교
+    district: 부산전체
+    collector: generic_board
+    url: https://home.pen.go.kr/bukbu/na/ntt/selectNttList.do?mi=13751&bbsId=3728
+    pages: 1
+    keyword_filter: true
+    phase: 1
+    enabled: true
+    verified: true
+    options:
+      page_param: currPage
+      link_attr: data-id
+      link_template: "https://home.pen.go.kr/bukbu/na/ntt/selectNttInfo.do?mi=13751&bbsId=3728&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산광역시북부교육지원청
+
+  - id: dongnae_edu_hire
+    name: 동래교육지원청 학교인력채용
+    org_type: 교육청·학교
+    district: 부산전체
+    collector: generic_board
+    url: https://home.pen.go.kr/dongnae/na/ntt/selectNttList.do?mi=11269&bbsId=3638
+    pages: 1
+    keyword_filter: true
+    phase: 1
+    enabled: true
+    verified: true
+    options:
+      page_param: currPage
+      link_attr: data-id
+      link_template: "https://home.pen.go.kr/dongnae/na/ntt/selectNttInfo.do?mi=11269&bbsId=3638&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산광역시동래교육지원청
+
+  - id: haeundae_edu_hire
+    name: 해운대교육지원청 학교인력채용
+    org_type: 교육청·학교
+    district: 부산전체
+    collector: generic_board
+    url: https://home.pen.go.kr/haeundae/na/ntt/selectNttList.do?mi=11341&bbsId=3542
+    pages: 1
+    keyword_filter: true
+    phase: 1
+    enabled: true
+    verified: true
+    options:
+      page_param: currPage
+      link_attr: data-id
+      link_template: "https://home.pen.go.kr/haeundae/na/ntt/selectNttInfo.do?mi=11341&bbsId=3542&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산광역시해운대교육지원청
+
+  # ─────────────────────────────── 지자체 (시청·구군청)
+  - id: city_jobs
+    name: 부산시청 분야별 통합 채용정보 (시·사업소·공사공단·출연기관 공고)
+    org_type: 지자체
+    district: 부산전체
+    collector: generic_board
+    url: https://www.busan.go.kr/depart/jobgonji01
+    pages: 2
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      page_param: curPage
+      org_prefix: 부산광역시
+
+  - id: city_jobs_other
+    name: 부산시청 타기관 채용정보 (국가기관·공공기관 부산 공고)
+    org_type: 국가·공공기관
+    district: 부산전체
+    collector: generic_board
+    url: https://www.busan.go.kr/depart/jobgonji02
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: curPage
+
+  - id: city_stadium_notice
+    name: 부산시 체육시설관리사업소 - 공지사항 (사직·강서 수영장 강사 모집)
+    org_type: 공단(체육시설)
+    district: 부산전체
+    collector: generic_board
+    url: https://www.busan.go.kr/stadium/sfnotice
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      page_param: curPage
+      include: [강사, 지도자, 코치, 트레이너]  # '수영강습 접수 안내' 같은 이용자 공지는 거름
+      org_prefix: 부산광역시 체육시설관리사업소
+
+  # 구·군청 채용공고: 전국 공통 새올 시스템 목록을 직접 GET 으로 읽는다
+  # (목록 화면 OfrNotAncmtLSub.jsp 는 스크립트로 이 주소를 부르는 빈 껍데기)
+  - id: seogu_eminwon
+    name: 서구청 채용공고(새올)
+    org_type: 지자체
+    district: 서구
+    collector: generic_board
+    url: "https://eminwon.bsseogu.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1"
+    pages: 2
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      page_param: pageIndex
+      org_prefix: 부산 서구청
+      link_template: "https://eminwon.bsseogu.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectOfrNotAncmt&methodnm=selectOfrNotAncmtRegst&not_ancmt_mgt_no={0}&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&list_gubun=A&Key=B_Subject"
+      key_param: not_ancmt_mgt_no
+
+  - id: donggu_eminwon
+    name: 동구청 채용공고(새올)
+    org_type: 지자체
+    district: 동구
+    collector: generic_board
+    url: "https://eminwon.bsdonggu.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1"
+    pages: 2
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      page_param: pageIndex
+      org_prefix: 부산 동구청
+      link_template: "https://eminwon.bsdonggu.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectOfrNotAncmt&methodnm=selectOfrNotAncmtRegst&not_ancmt_mgt_no={0}&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&list_gubun=A&Key=B_Subject"
+      key_param: not_ancmt_mgt_no
+
+  - id: yeongdo_eminwon
+    name: 영도구청 채용공고(새올)
+    org_type: 지자체
+    district: 영도구
+    collector: generic_board
+    url: "https://eminwon.yeongdo.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1"
+    pages: 2
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      page_param: pageIndex
+      org_prefix: 부산 영도구청
+      link_template: "https://eminwon.yeongdo.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectOfrNotAncmt&methodnm=selectOfrNotAncmtRegst&not_ancmt_mgt_no={0}&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&list_gubun=A&Key=B_Subject"
+      key_param: not_ancmt_mgt_no
+
+  - id: busanjin_eminwon
+    name: 부산진구청 채용공고(새올)
+    org_type: 지자체
+    district: 부산진구
+    collector: generic_board
+    url: "https://eminwon.busanjin.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1"
+    pages: 2
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      page_param: pageIndex
+      org_prefix: 부산진구청
+      link_template: "https://eminwon.busanjin.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectOfrNotAncmt&methodnm=selectOfrNotAncmtRegst&not_ancmt_mgt_no={0}&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&list_gubun=A&Key=B_Subject"
+      key_param: not_ancmt_mgt_no
+
+  - id: dongnae_eminwon
+    name: 동래구청 채용공고(새올)
+    org_type: 지자체
+    district: 동래구
+    collector: generic_board
+    url: "https://eminwon.dongnae.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1"
+    pages: 2
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      page_param: pageIndex
+      org_prefix: 부산 동래구청
+      link_template: "https://eminwon.dongnae.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectOfrNotAncmt&methodnm=selectOfrNotAncmtRegst&not_ancmt_mgt_no={0}&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&list_gubun=A&Key=B_Subject"
+      key_param: not_ancmt_mgt_no
+
+  - id: haeundae_eminwon
+    name: 해운대구청 채용공고(새올)
+    org_type: 지자체
+    district: 해운대구
+    collector: generic_board
+    url: "https://eminwon.haeundae.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1"
+    pages: 2
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      page_param: pageIndex
+      org_prefix: 부산 해운대구청
+      link_template: "https://eminwon.haeundae.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectOfrNotAncmt&methodnm=selectOfrNotAncmtRegst&not_ancmt_mgt_no={0}&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&list_gubun=A&Key=B_Subject"
+      key_param: not_ancmt_mgt_no
+
+  - id: saha_eminwon
+    name: 사하구청 채용공고(새올)
+    org_type: 지자체
+    district: 사하구
+    collector: generic_board
+    url: "https://eminwon.saha.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1"
+    pages: 2
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      page_param: pageIndex
+      org_prefix: 부산 사하구청
+      link_template: "https://eminwon.saha.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectOfrNotAncmt&methodnm=selectOfrNotAncmtRegst&not_ancmt_mgt_no={0}&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&list_gubun=A&Key=B_Subject"
+      key_param: not_ancmt_mgt_no
+
+  - id: geumjeong_eminwon
+    name: 금정구청 채용공고(새올)
+    org_type: 지자체
+    district: 금정구
+    collector: generic_board
+    url: "https://eminwon.geumjeong.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1"
+    pages: 2
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      page_param: pageIndex
+      org_prefix: 부산 금정구청
+      link_template: "https://eminwon.geumjeong.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectOfrNotAncmt&methodnm=selectOfrNotAncmtRegst&not_ancmt_mgt_no={0}&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&list_gubun=A&Key=B_Subject"
+      key_param: not_ancmt_mgt_no
+
+  - id: yeonje_eminwon
+    name: 연제구청 채용공고(새올)
+    org_type: 지자체
+    district: 연제구
+    collector: generic_board
+    url: "https://eminwon.yeonje.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1"
+    pages: 2
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      page_param: pageIndex
+      org_prefix: 부산 연제구청
+      link_template: "https://eminwon.yeonje.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectOfrNotAncmt&methodnm=selectOfrNotAncmtRegst&not_ancmt_mgt_no={0}&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&list_gubun=A&Key=B_Subject"
+      key_param: not_ancmt_mgt_no
+
+  - id: namgu_eminwon
+    name: 남구청 채용공고(새올)
+    org_type: 지자체
+    district: 남구
+    collector: generic_board
+    url: "https://eminwon.bsnamgu.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1"
+    pages: 2
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      page_param: pageIndex
+      org_prefix: 부산 남구청
+      link_template: "https://eminwon.bsnamgu.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectOfrNotAncmt&methodnm=selectOfrNotAncmtRegst&not_ancmt_mgt_no={0}&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&list_gubun=A&Key=B_Subject"
+      key_param: not_ancmt_mgt_no
+      short_headers: true  # 요청 머리글이 길면 400 Bad Request → Accept-Language 를 빼고 보냄
+
+  - id: sasang_eminwon
+    name: 사상구청 채용공고(새올)
+    org_type: 지자체
+    district: 사상구
+    collector: generic_board
+    url: "https://eminwon.sasang.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1"
+    pages: 2
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      page_param: pageIndex
+      org_prefix: 부산 사상구청
+      link_template: "https://eminwon.sasang.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectOfrNotAncmt&methodnm=selectOfrNotAncmtRegst&not_ancmt_mgt_no={0}&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&list_gubun=A&Key=B_Subject"
+      key_param: not_ancmt_mgt_no
+      short_headers: true  # 요청 머리글이 길면 400 Bad Request → Accept-Language 를 빼고 보냄
+
+  - id: bukgu_hire
+    name: 북구청 일자리정보 (구청 채용공고)
+    org_type: 지자체
+    district: 북구
+    collector: generic_board
+    # 북구는 새올 채용공고(05)가 비어 있고 구청 채용은 이 게시판에 올라온다 (접수기간 칸이 있음)
+    url: https://www.bsbukgu.go.kr/board/list.bsbukgu?boardId=BBS_0000017&menuCd=DOM_000000103007012005&contentsSid=200
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_prefix: 부산 북구청
+
+  - id: gangseo_gosi
+    name: 강서구청 고시공고(새올, 채용 포함)
+    org_type: 지자체
+    district: 강서구
+    collector: generic_board
+    # 강서구는 채용 게시판이 따로 없고 새올 채용공고(05)도 비어 있어서, 모집 공고가 섞여 올라오는 고시공고 전체를 키워드로 거른다
+    url: "https://eminwon.bsgangseo.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=30&title=%EA%B3%A0%EC%8B%9C%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1"
+    pages: 1  # 한 쪽 30건 (하루 10건 안팎)
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      page_param: pageIndex
+      org_prefix: 부산 강서구청
+      link_template: "https://eminwon.bsgangseo.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectOfrNotAncmt&methodnm=selectOfrNotAncmtRegst&not_ancmt_mgt_no={0}&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&title=%EA%B3%A0%EC%8B%9C%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&list_gubun=A&Key=B_Subject"
+      key_param: not_ancmt_mgt_no
+
+  - id: suyeong_hire
+    name: 수영구청 채용 (게재기간중인글)
+    org_type: 지자체
+    district: 수영구
+    collector: generic_board
+    url: https://www.suyeong.go.kr/index.suyeong?menuCd=DOM_000000103001010001
+    keyword_filter: true
+    phase: 2
+    enabled: false
+    verified: false
+    blocked: 해외(GitHub 러너) 접속을 응답 없이 끊음. www·eminwon·m.suyeong.go.kr 모두, 러너 4대(버지니아·아이오와)에서 같음 (2026-09-29). 국내 실행 환경에서만 수집 가능
+
+  - id: donggu_hire
+    name: 동구청 채용공고 (체육교실 강사 등)
+    org_type: 지자체
+    district: 동구
+    collector: generic_board
+    url: https://www.bsdonggu.go.kr/board/list.donggu?boardId=BBS_0000307&menuCd=DOM_000000104004011002
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      page_param: startPage
+      key_param: dataSid
+      org_prefix: 부산 동구청
+
+  - id: junggu_hire
+    name: 중구청 우리구청 일자리 (채용공고)
+    org_type: 지자체
+    district: 중구
+    collector: generic_board
+    url: https://www.bsjunggu.go.kr/board/list.junggu?boardId=BBS_0000186&menuCd=DOM_000002102001001000
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 부산 중구청
+
+  - id: gijang_jobs
+    name: 기장군청 구인정보(공공일자리)
+    org_type: 지자체
+    district: 기장군
+    collector: generic_board
+    url: https://www.gijang.go.kr/board/list.gijang?boardId=BBS_0000077&menuCd=DOM_000000104009004002
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 부산 기장군청
+
+  - id: namgu_jobs
+    name: 남구청 일드림센터 취업정보 (구청·공공 채용 포함)
+    org_type: 지자체
+    district: 남구
+    collector: generic_board
+    url: https://www.bsnamgu.go.kr/board/list.namgu?boardId=BBS_0000017&menuCd=DOM_000000125003003000
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+
+  # 동 행정복지센터(주민자치센터) 공지 - 구청 누리집이 여러 동의 공지를 한 게시판에 모아 보여 주는 곳.
+  # '○○동 주민자치프로그램 강사 모집'이 이따금 올라온다. 대부분은 동 생활 안내라서 강사 모집만 거름.
+  # 작성자 칸이 동 이름('괘법동')이라 org_selector 로 짚는다 (사람 이름 검사 건너뜀).
+  # 넣지 않은 곳: 동구(동 구분 값을 바꿔도 초량1동 글만 보임)·금정구(동 새소식에 구청 부서 글이 섞임)·
+  # 사하구(동마다 따로 둔 게시판이 16곳이고 링크가 자바스크립트)·연제구(동 게시판 주소가 오류)·
+  # 동래·중구·서구·영도·기장(동 공지를 모은 게시판을 찾지 못함)·해운대(러너에서 접속 불가)·수영(차단)
+  - id: dong_busanjin_notice
+    name: 부산진구 동 행정복지센터 - 동 공지사항 (여러 동 통합)
+    org_type: 지자체
+    district: 부산진구
+    collector: generic_board
+    url: https://www.busanjin.go.kr/board/list.busanjin?boardId=DONGNOTICE
+    pages: 3  # 하루 10건 안팎
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: startPage
+      key_param: dataSid
+      org_selector: td.name
+      org_prefix: 부산진구
+      include: [강사, 튜터, 코치, 지도자, 인력풀]
+
+  - id: dong_namgu_notice
+    name: 남구 동 행정복지센터 - 동 소식 (여러 동 통합)
+    org_type: 지자체
+    district: 남구
+    collector: generic_board
+    url: https://www.bsnamgu.go.kr/board/list.namgu?boardId=BBS_0000123
+    pages: 2
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: startPage
+      key_param: dataSid
+      org_name: 부산 남구 동 행정복지센터
+      org_fixed: true  # 작성자 칸이 담당자 이름이거나 비어 있음
+      include: [강사, 튜터, 코치, 지도자, 인력풀]
+
+  - id: dong_bukgu_notice
+    name: 북구 동 행정복지센터 - 동 소식 (여러 동 통합)
+    org_type: 지자체
+    district: 북구
+    collector: generic_board
+    url: https://www.bsbukgu.go.kr/board/list.bsbukgu?boardId=BBS_0000125
+    pages: 2  # 공지 줄이 200개 남짓 매 쪽 위에 붙고, 일반 글은 쪽마다 10개
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: startPage
+      key_param: dataSid
+      org_selector: "td:nth-of-type(3)"
+      org_prefix: 부산 북구
+      include: [강사, 튜터, 코치, 지도자, 인력풀]
+
+  - id: dong_sasang_notice
+    name: 사상구 동 행정복지센터 - 동 소식 (여러 동 통합)
+    org_type: 지자체
+    district: 사상구
+    collector: generic_board
+    url: https://www.sasang.go.kr/board/list.sasang?boardId=BBS_0000173
+    pages: 2
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: startPage
+      key_param: dataSid
+      org_selector: td.name
+      org_prefix: 부산 사상구
+      include: [강사, 튜터, 코치, 지도자, 인력풀]
+
+  - id: dong_gangseo_notice
+    name: 강서구 동 행정복지센터 - 동 소식 (여러 동 통합)
+    org_type: 지자체
+    district: 강서구
+    collector: generic_board
+    url: https://www.bsgangseo.go.kr/portal/board/post/list.do?bcIdx=543&mid=0604010200
+    pages: 1  # 한 쪽이 한 달 남짓
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_attr: data-req-get-p-idx  # <a data-req-get-p-idx="409907" onclick="yhLib.inline.post(this)">
+      link_template: "https://www.bsgangseo.go.kr/portal/board/post/view.do?idx={0}&bcIdx=543&mid=0604010200"
+      key_param: idx
+      org_selector: td.list_part span
+      org_prefix: 부산 강서구
+      include: [강사, 튜터, 코치, 지도자, 인력풀]
+
+  # ─────────────────────────────── 공단·체육시설
+  - id: bisco_hire
+    name: 부산시설공단 - 채용공고 (한마음스포츠센터·수영장 파트강사 등)
+    org_type: 공단(체육시설)
+    district: 부산전체
+    collector: generic_board
+    url: https://www.bisco.or.kr/about/about05/about05_2/?bcIdx=19&MODE=L&P=1&PC=20
+    keyword_filter: true
+    phase: 2
+    enabled: false
+    verified: false
+    blocked: 해외(GitHub 러너) 접속을 끊음 (Connection reset). 공고는 부산시청 통합 채용정보(city_jobs)에 함께 올라온다
+
+  - id: bnfmc_hire
+    name: 부산남구시설관리공단 - 채용공고 (시간강사 등)
+    org_type: 공단(체육시설)
+    district: 남구
+    collector: generic_board
+    url: https://www.bnfmc.or.kr/portal/gosiInfo/list.do?CATEGORY=03&mId=0404000000
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      # 제목 링크 fn_go_view(303) 은 목록 폼을 view.do 로 제출 → 같은 값을 GET 으로
+      link_template: "https://www.bnfmc.or.kr/portal/gosiInfo/view.do?mId=0404000000&idx={0}"
+      key_param: idx
+      org_name: 부산남구시설관리공단
+
+  - id: gijangcmc_hire
+    name: 기장군도시관리공단 - 채용정보 (체육센터·복지관 시간강사 등)
+    org_type: 공단(체육시설)
+    district: 기장군
+    collector: generic_board
+    url: https://www.gijangcmc.or.kr/impartment/impartment05.asp?id=che
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      page_param: page
+      key_param: idx
+      truncated_titles: true  # 목록 제목이 30자 안팎에서 잘림 → 상세 페이지에서 전체 제목
+      org_name: 기장군도시관리공단
+
+  - id: dongnae_sports_hire
+    name: 동래구국민체육센터 - 채용공고 (수영·헬스 시간강사)
+    org_type: 공단(체육시설)
+    district: 동래구
+    collector: generic_board
+    url: https://sports.dongnae.go.kr/subpage/index/29/
+    pages: 1
+    keyword_filter: false  # 체육센터 강사 채용만 올라오는 게시판
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      truncated_titles: true
+      org_name: 동래구국민체육센터
+
+  # 국민체육센터·체육회 (구 국민체육센터 채용 게시판, 시·구 체육회 채용·공지 게시판).
+  # 수영·헬스 시간강사, 생활체육지도자, 생활체육교실 강사 채용이 올라온다. 안전요원·안내데스크 등 다른 직원 채용은 키워드로 거름.
+  # 작성자 칸은 '관리자' 같은 계정이라 기관명은 고정(org_fixed)
+  # 넣지 않은 곳: 부산국민체육센터(bnsc.or.kr)·북구국민체육센터(bukgusports.com)·부산광역시생활체육문화센터(saba.or.kr)는
+  #   해외 접속 시간 초과(2026-10-02 러너 두 대), 금정구·사상구체육회는 해외 접속 403, 금정국민체육센터 채용공고는 글이 없음,
+  #   해운대생활체육센터는 공지 3건뿐, 동래·연제·동구·기장군체육회는 누리집을 찾지 못함 (동래·연제는 국민체육센터 채용 게시판으로 받음)
+  - id: sports_busanjin_hire
+    name: 부산진구국민체육센터 - 채용공고 (헬스 트레이너·수영 지도자 등)
+    org_type: 공단(체육시설)
+    district: 부산진구
+    collector: generic_board
+    url: https://www.jsports.or.kr/bbs/board.php?bo_table=05_02
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      org_name: 부산진구국민체육센터
+      org_fixed: true
+      include: [강사, 지도자, 코치, 트레이너, 강습]
+
+  - id: sports_yeonje_hire
+    name: 연제구국민체육센터 - 채용공고 (수영 시간강사 등)
+    org_type: 공단(체육시설)
+    district: 연제구
+    collector: generic_board
+    url: https://sports.yeonje.go.kr/subpage/index/89
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      truncated_titles: true  # 동래구국민체육센터와 같은 틀. 목록 제목이 '...' 로 잘림 → 상세 페이지에서 전체 제목
+      org_name: 연제구국민체육센터
+      org_fixed: true
+      include: [강사, 지도자, 코치, 트레이너, 강습]
+
+  - id: sports_geoje_hire
+    name: 연제구 거제국민체육센터 - 채용공고 (체육지도자·시간강사)
+    org_type: 공단(체육시설)
+    district: 연제구
+    collector: generic_board
+    url: https://www.yj-sports.or.kr/bbs/board.php?bo_table=05_03
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      org_name: 연제구 거제국민체육센터
+      org_fixed: true
+      include: [강사, 지도자, 코치, 트레이너, 강습]
+
+  - id: sports_suyeong_hire
+    name: 수영구 국민체육센터 - 채용공고 (수영·헬스 파트강사 등)
+    org_type: 공단(체육시설)
+    district: 수영구
+    collector: generic_board
+    url: https://www.sysports.or.kr/emSolution/board/recru
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      # 부트스트랩 <li class="row board-row"> 목록. 날짜 칸은 '09-16' (연도 없음)
+      row_selector: "li.row.board-row"
+      title_selector: "div.col-xs-12 > a"
+      date_selector: ":scope > div:nth-of-type(4)"
+      key_pattern: "/post/(\\d+)"
+      org_name: 수영구 국민체육센터
+      org_fixed: true
+      include: [강사, 지도자, 코치, 트레이너, 강습]
+
+  - id: sports_suyeong_club_hire
+    name: 수영구스포츠클럽 - 채용공고 (파워로빅 강사·종목 지도자)
+    org_type: 공단(체육시설)
+    district: 수영구
+    collector: generic_board
+    url: https://www.sygsports.co.kr/bbs/board.php?bo_table=05_08
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      org_name: 수영구스포츠클럽
+      org_fixed: true
+      include: [강사, 지도자, 코치, 트레이너, 강습]
+
+  - id: sports_saha_notice
+    name: 사하구 국민체육센터 - 공지사항
+    org_type: 공단(체육시설)
+    district: 사하구
+    collector: generic_board
+    url: https://www.sahaksports.or.kr/saha/207
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      # 채용공지 게시판(/saha/211)은 글이 없어 공지사항을 받는다. <div class="boardList"><a href="?action-value=…&action=read">
+      row_selector: "div.boardList:has(> a)"
+      title_selector: "span.title"
+      date_selector: "span.date"
+      key_pattern: "action-value=([0-9a-f]+)"
+      org_name: 사하구 국민체육센터
+      org_fixed: true
+      include: [강사, 지도자, 코치, 트레이너, 강습]
+
+  - id: assoc_city_notice
+    name: 부산광역시체육회 - 공지사항 (체육회 운영 체육센터 직원·강사 모집 포함)
+    org_type: 공단(체육시설)
+    district: 부산전체
+    collector: generic_board
+    url: http://www.sports.busan.kr/contents/05_notice/board.html?board_id=board_notice
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      key_param: "no"  # YAML 에서 따옴표 없는 no 는 false
+      org_name: 부산광역시체육회
+      org_fixed: true
+      include: [강사, 지도자, 코치, 트레이너, 강습]
+
+  - id: assoc_busanjin_hire
+    name: 부산진구체육회 - 채용공고 (생활체육지도자·주말체육학교 강사)
+    org_type: 공단(체육시설)
+    district: 부산진구
+    collector: generic_board
+    url: http://www.busanjingu-sports.or.kr/bbs/board.php?bo_table=recruit
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      org_name: 부산진구체육회
+      org_fixed: true
+      include: [강사, 지도자, 코치, 트레이너, 강습]
+
+  - id: assoc_namgu_hire
+    name: 남구체육회 - 채용공고 (생활체육지도자)
+    org_type: 공단(체육시설)
+    district: 남구
+    collector: generic_board
+    url: http://www.bngsports.or.kr/bbs/board.php?bo_table=recruit
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      org_name: 부산광역시남구체육회
+      org_fixed: true
+      include: [강사, 지도자, 코치, 트레이너, 강습]
+
+  - id: assoc_gangseo_hire
+    name: 강서구체육회 - 채용공고 (생활체육지도자·생활체육교실 지도자)
+    org_type: 공단(체육시설)
+    district: 강서구
+    collector: generic_board
+    url: https://www.gs7330.com/bbs/board.php?bo_table=employment
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      org_name: 부산광역시강서구체육회
+      org_fixed: true
+      include: [강사, 지도자, 코치, 트레이너, 강습]
+
+  - id: assoc_junggu_notice
+    name: 중구체육회 - 공지사항 (생활체육지도자 채용이 여기에 올라옴)
+    org_type: 공단(체육시설)
+    district: 중구
+    collector: generic_board
+    url: http://www.bsjgsc7330.co.kr/bbs/board.php?bo_table=notice
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      # 그누보드 <ul class="bo_list_ul"><li> 목록형. 날짜는 보이는 span.bo_date
+      row_selector: "ul.bo_list_ul > li"
+      title_selector: "div.bo_subject a"
+      date_selector: "span.bo_date"
+      key_param: wr_id
+      org_name: 부산광역시중구체육회
+      org_fixed: true
+      include: [강사, 지도자, 코치, 트레이너, 강습]
+
+  - id: assoc_junggu_hire
+    name: 중구체육회 - 채용공고 (생활체육교실 강사)
+    org_type: 공단(체육시설)
+    district: 중구
+    collector: generic_board
+    url: http://www.bsjgsc7330.co.kr/bbs/board.php?bo_table=job
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      row_selector: "ul.bo_list_ul > li"
+      title_selector: "div.bo_subject a"
+      date_selector: "span.bo_date"
+      key_param: wr_id
+      org_name: 부산광역시중구체육회
+      org_fixed: true
+      include: [강사, 지도자, 코치, 트레이너, 강습]
+
+  - id: assoc_saha_hire
+    name: 사하구체육회 - 채용공고 (어르신 전담 생활체육지도자 등)
+    org_type: 공단(체육시설)
+    district: 사하구
+    collector: generic_board
+    url: http://sahasports.or.kr/bbs/board.php?bo_table=recruit
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      org_name: 부산광역시사하구체육회
+      org_fixed: true
+      include: [강사, 지도자, 코치, 트레이너, 강습]
+
+  - id: assoc_suyeong_hire
+    name: 수영구체육회 - 채용공고 (생활체육교실 강사·생활체육지도자)
+    org_type: 공단(체육시설)
+    district: 수영구
+    collector: generic_board
+    url: http://www.sportssy.or.kr/bbs/board.php?bo_table=recruit
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      org_name: 부산광역시수영구체육회
+      org_fixed: true
+      include: [강사, 지도자, 코치, 트레이너, 강습]
+
+  - id: assoc_seogu_notice
+    name: 서구체육회 - 공지사항 (채용 게시판이 따로 없음)
+    org_type: 공단(체육시설)
+    district: 서구
+    collector: generic_board
+    url: http://bsseogusports.or.kr/bbs/board.php?bo_table=sub4_1
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      org_name: 부산광역시서구체육회
+      org_fixed: true
+      include: [강사, 지도자, 코치, 트레이너, 강습]
+
+  - id: assoc_haeundae_hire
+    name: 해운대구체육회 - 채용공고 (생활체육지도자)
+    org_type: 공단(체육시설)
+    district: 해운대구
+    collector: generic_board
+    url: http://www.hud7330.com/bbs/board.php?bo_table=employment
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      org_name: 부산광역시해운대구체육회
+      org_fixed: true
+      include: [강사, 지도자, 코치, 트레이너, 강습]
+
+  - id: assoc_yeongdo_hire
+    name: 영도구체육회 - 채용공고 (생활체육지도자)
+    org_type: 공단(체육시설)
+    district: 영도구
+    collector: generic_board
+    url: https://yd7330.com/board/list/employment
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      # <li> 목록형 (div.col.subject · div.col.date). 글번호 idx
+      row_selector: "li:has(> div.col.subject)"
+      title_selector: "div.subject a"
+      date_selector: "div.date"
+      key_param: idx
+      org_name: 영도구체육회
+      org_fixed: true
+      include: [강사, 지도자, 코치, 트레이너, 강습]
+
+  - id: assoc_bukgu_notice
+    name: 북구체육회 - 공지사항 (채용 게시판이 따로 없음)
+    org_type: 공단(체육시설)
+    district: 북구
+    collector: generic_board
+    url: https://bbsc.kr/board/notice
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      # 행에 링크가 없고 <tr class="clickable-row" data-href="/board/notice/read/68"> 로 연다
+      row_selector: "tr.clickable-row"
+      title_selector: "td.td_title"
+      link_attr: data-href
+      key_pattern: "/read/(\\d+)"
+      org_name: 부산광역시북구체육회
+      org_fixed: true
+      include: [강사, 지도자, 코치, 트레이너, 강습]
+
+  # 수영장 (구 국민체육센터 밖의 공공 수영장: 스포원, 사상·삼락, 명지). 수영·아쿠아 강사, 수영 지도자 채용.
+  # 이용자 공지('수영강습 접수 안내')가 섞여 '강습' 은 빼고 강사·지도자·코치·트레이너 글만
+  # 넣지 않은 곳: 동구국민체육문예센터(채용 게시판에 글 없음), 동구국민체육센터(자동 접속 확인 cupid.js),
+  #   영도국민체육센터(ydsports.org)·강서구국민체육센터(gssports.or.kr)는 접속 시간 초과 (2026-10-02 러너 두 대)
+  - id: pool_spo1_notice
+    name: 부산시설공단 스포원 - 공지사항 (스포츠센터 수영강사 채용 등)
+    org_type: 공단(체육시설)
+    district: 금정구
+    collector: generic_board
+    # 스포원은 부산시설공단(bisco.or.kr, 해외 차단) 소속이지만 이 누리집은 열림. 채용공고 목록(CT_ID=RECRUIT)은 404 라 공지사항
+    url: https://www.spo1.or.kr/bbs/list.do?cmd=list&CT_ID=NOTICE&NOGUBUN=S
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      key_param: BOARD_SEQ  # 암호화된 글번호지만 실행마다 같음 (2026-10-02 두 번 비교)
+      org_name: 부산시설공단 스포원
+      org_fixed: true
+      include: [강사, 지도자, 코치, 트레이너]
+
+  - id: pool_sasang_hire
+    name: 사상국민체육센터 - 채용공고 (삼락복합문화체육센터 수영·아쿠아 강사 등)
+    org_type: 공단(체육시설)
+    district: 사상구
+    collector: generic_board
+    url: https://www.ssnsc.or.kr/DyBoard/Board_list.asp?BGubun=0007
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      key_param: ident
+      org_name: 사상국민체육센터
+      org_fixed: true
+      include: [강사, 지도자, 코치, 트레이너]
+
+  - id: pool_myeongji_hire
+    name: 명지레포츠센터 - 채용공지 (수영강사·헬스지도자)
+    org_type: 공단(체육시설)
+    district: 강서구
+    collector: generic_board
+    url: https://www.mjsports.co.kr/bbs/board.php?bo_table=05_05
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      org_name: 명지레포츠센터
+      org_fixed: true
+      include: [강사, 지도자, 코치, 트레이너]
+
+  # ─────────────────────────────── 평생학습관·도서관 (강사 모집 글만 키워드로 거름)
+  - id: haeundae_lifelong
+    name: 해운대구 평생학습관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 해운대구
+    collector: generic_board
+    url: https://www.haeundae.go.kr/edu/board/list.do?boardId=BBS_0000137&menuCd=DOM_000001104001000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 해운대구 평생학습관
+
+  - id: saha_lifelong
+    name: 사하구 평생학습관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 사하구
+    collector: generic_board
+    url: https://www.saha.go.kr/edu/bbs/list.do?ptIdx=115&mId=0501000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # boardView('listForm', 작성자, 공개여부, 글번호, ptIdx, mId, 쪽) → 상세는 GET 으로
+      link_template: "https://www.saha.go.kr/edu/bbs/view.do?bIdx={3}&ptIdx={4}&mId={5}"
+      key_param: bIdx
+      org_name: 사하구 평생학습관
+
+  - id: geumjeong_lifelong
+    name: 금정구 평생학습관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 금정구
+    collector: generic_board
+    url: https://lll.geumjeong.go.kr/board/list.geumj?boardId=BBS_0000223&menuCd=DOM_000000805001000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 금정구 평생학습관
+
+  - id: yeonje_lifelong
+    name: 연제구 평생학습 - 공지사항
+    org_type: 평생교육·도서관
+    district: 연제구
+    collector: generic_board
+    url: https://www.yeonje.go.kr/edu/bbs/list.do?ptIdx=134&mId=0606000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_attr: data-action  # <a data-action="/edu/bbs/view.do?bIdx=130899&ptIdx=134">
+      link_template: "https://www.yeonje.go.kr{0}&mId=0606000000"
+      key_param: bIdx
+      org_name: 연제구 평생학습관
+
+  - id: gijang_lifelong
+    name: 기장군 평생학습관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 기장군
+    collector: generic_board
+    url: https://www.gijang.go.kr/lll/board/list.gijang?boardId=BBS_0000127&menuCd=DOM_000000704001000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 기장군 평생학습관
+
+  - id: namgu_lifelong
+    name: 남구 평생학습관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 남구
+    collector: generic_board
+    url: https://www.bsnamgu.go.kr/edu/sub05/list.php?menu_id=notice
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: idx
+      org_name: 남구 평생학습관
+
+  - id: bukgu_lifelong
+    name: 북구 평생학습관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 북구
+    collector: generic_board
+    url: https://www.bsbukgu.go.kr/edu/board/list.bsbukgu?boardId=BBS_0000068&menuCd=DOM_000000606001000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 북구 평생학습관
+
+  - id: donggu_lifelong
+    name: 동구 평생학습관 - 열린마당
+    org_type: 평생교육·도서관
+    district: 동구
+    collector: generic_board
+    url: https://www.bsdonggu.go.kr/lll/board/list.donggu?boardId=BBS_0000104&menuCd=DOM_000000605000000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 동구 평생학습관
+
+  - id: seogu_lifelong
+    name: 서구 평생학습관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 서구
+    collector: generic_board
+    url: https://www.bsseogu.go.kr/edu/board/list.bsseogu?boardId=BBS_0000120&menuCd=DOM_000000707001000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 서구 평생학습관
+
+  - id: junggu_lifelong
+    name: 중구 평생학습관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 중구
+    collector: generic_board
+    url: https://www.bsjunggu.go.kr/lll/board/list.junggu?boardId=BBS_0000087&menuCd=DOM_000000705001000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 중구 평생학습관
+
+  - id: sasang_lifelong
+    name: 사상구 평생학습관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 사상구
+    collector: generic_board
+    url: https://www.sasang.go.kr/lll/board/list.sasang?boardId=BBS_0000009&menuCd=DOM_000000705001000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 사상구 평생학습관
+
+  - id: gangseo_lifelong
+    name: 강서구 평생학습관 - 강서소식
+    org_type: 평생교육·도서관
+    district: 강서구
+    collector: generic_board
+    url: https://lll.bsgangseo.go.kr/html/?pCode=gsNews
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: idx
+      org_name: 강서구 평생학습관
+
+  - id: busanjin_lifelong
+    name: 부산진구 평생학습관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 부산진구
+    collector: generic_board
+    url: https://www.busanjin.go.kr/board/list.busanjin?boardId=BBS_0000010&menuCd=DOM_000000206001000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 부산진구 평생학습관
+      org_fixed: true  # 작성자 칸이 '평생교육과'
+
+  - id: dongnae_lifelong
+    name: 동래구 평생학습관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 동래구
+    collector: generic_board
+    url: https://www.dongnae.go.kr/board/list.dongnae?boardId=BBS_0000087&menuCd=DOM_000000709001000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 동래구 평생학습관
+      org_fixed: true  # 작성자 칸이 '인생디자인학교' 같은 사업 이름
+
+  - id: yeongdo_lifelong
+    name: 영도구 평생학습관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 영도구
+    collector: generic_board
+    url: https://www.yeongdo.go.kr/hll/01419/01420.web
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 영도도서관과 같은 <li> 목록
+      row_selector: "ul.lst1 > li.li1"
+      title_selector: "strong.t1"
+      date_selector: "span.t3"  # 첫 번째 t3 가 작성일
+      key_param: idx
+      org_name: 영도구 평생학습관
+      org_fixed: true
+
+  # 부산평생학습플랫폼: 구·군 평생학습관과 평생교육기관이 함께 올리는 공지 (수영구처럼 누리집이 해외 접속을 막는 곳의 글도 올라옴)
+  - id: lll_busan_notice
+    name: 부산평생학습플랫폼 - 공지사항
+    org_type: 평생교육·도서관
+    district: 부산전체
+    collector: generic_board
+    url: https://lll.busan.go.kr/lll/index.do?menu_id=00003220
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # fn_icms_navi_common('view','6271') → 첫 화면 목록과 같은 상세 주소
+      link_template: "https://lll.busan.go.kr/lll/index.do?menu_id=00003220&menu_link=/icms/bbs/selectBoardArticle.do&bbsId=BBS_00029&nttId={1}&bbsTyCode=BBST03&bbsAttrbCode=BBSA03"
+      key_param: nttId
+      org_name: 부산평생학습플랫폼
+      org_fixed: true  # 작성자 칸이 '남구 관리자' (구·군은 제목의 [수영구] 머리말로 보임)
+      include: [강사, 튜터, 코치, 지도자, 인력풀, 개설 희망, 강좌 제안]
+
+  - id: lll_busan_org
+    name: 부산평생학습플랫폼 - 평생교육기관 소식
+    org_type: 평생교육·도서관
+    district: 부산전체
+    collector: generic_board
+    url: https://lll.busan.go.kr/lll/index.do?menu_id=00004673
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://lll.busan.go.kr/lll/index.do?menu_id=00004673&menu_link=/icms/bbs/selectBoardArticle.do&bbsId=BBS_00373&nttId={1}&bbsTyCode=BBST03&bbsAttrbCode=BBSA03"
+      key_param: nttId
+      org_name: 부산평생학습플랫폼
+      org_fixed: true
+      include: [강사, 튜터, 코치, 지도자, 인력풀, 개설 희망, 강좌 제안]
+
+  # ─────────────────────────────── 대학 부설 평생교육원 (수강생 모집이 대부분이라 강사·강좌 개설 희망자 모집만 거름)
+  # 같은 사용자의 다른 저장소(lifelong-education-pyengsang-)도 이 게시판들을 모은다. 셀렉터는 그쪽 검증을 참고했다.
+  - id: univ_pnu_sce
+    name: 부산대학교 미래시민교육원 - 공지 (첫 화면)
+    org_type: 평생교육·도서관
+    district: 금정구
+    collector: generic_board
+    url: https://sce.pusan.ac.kr/
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 게시판 화면(/page?menuCD=000000000000561)은 목록을 자바스크립트로 그려서 첫 화면의 최근 글 4건을 읽는다
+      row_selector: "#notice li.notice-item"
+      title_selector: "p.tit"
+      date_selector: "span.date"
+      key_param: seq
+      org_name: 부산대학교 미래시민교육원
+      org_fixed: true
+      include: [강사, 튜터, 초빙, 인력풀, 개설 희망, 강좌 제안, 강의 제안]
+
+  - id: univ_deu_notice
+    name: 동의대학교 미래교육원 - 공지사항
+    org_type: 평생교육·도서관
+    district: 부산진구
+    collector: generic_board
+    url: https://lifelong.deu.ac.kr/Board/BoardList.aspx?MENU_ID=146&PAGE_NO=&BoardMstNo=1
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 표가 아닌 <dl> 목록. 날짜는 '학점은행제 / 2026.10.02'
+      row_selector: "dl:has(a[id*=hlnkTitle])"
+      title_selector: "a[id*=hlnkTitle]"
+      date_selector: "span.summery"
+      key_param: BoardNo
+      org_name: 동의대학교 미래교육원
+      org_fixed: true
+      include: [강사, 튜터, 초빙, 인력풀, 개설 희망, 강좌 제안, 강의 제안]
+
+  - id: univ_bufs_notice
+    name: 부산외국어대학교 평생교육원 - 공지사항
+    org_type: 평생교육·도서관
+    district: 금정구
+    collector: generic_board
+    url: https://lec.bufs.ac.kr/community_notice?page=1
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 링크 없이 행에 onclick="window.location='/community_notice_detail/35'"
+      row_selector: "tr[onclick]"
+      title_selector: "td.tit"
+      key_pattern: "/community_notice_detail/(\\d+)"
+      org_name: 부산외국어대학교 평생교육원
+      org_fixed: true
+      include: [강사, 튜터, 초빙, 인력풀, 개설 희망, 강좌 제안, 강의 제안]
+
+  - id: univ_bhu_notice
+    name: 부산보건대학교 평생교육원 - 공지사항
+    org_type: 평생교육·도서관
+    district: 사하구
+    collector: generic_board
+    url: https://cedu.bhu.ac.kr/Board/BoardList.aspx?MENU_ID=146&PAGE_NO=&BoardMstNo=10
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: BoardNo
+      org_name: 부산보건대학교 평생교육원
+      org_fixed: true
+      include: [강사, 튜터, 초빙, 인력풀, 개설 희망, 강좌 제안, 강의 제안]
+
+  - id: univ_silla_notice
+    name: 신라대학교 평생교육원 - 평교광장
+    org_type: 평생교육·도서관
+    district: 사상구
+    collector: generic_board
+    url: https://soc.silla.ac.kr/Home/Sub04/NoticeBoard01.aspx
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 제목 링크가 __doPostBack('ctl00$CP1$grdList$ctl02$lnkSubject') 라 상세 주소가 없다 → 목록 주소로 안내하고 제목을 식별값으로
+      row_selector: "table#CP1_grdList tr:has(a[id*=lnkSubject])"
+      key_selector: "a[id*=lnkSubject]"
+      org_name: 신라대학교 평생교육원
+      org_fixed: true
+      include: [강사, 튜터, 초빙, 인력풀, 개설 희망, 강좌 제안, 강의 제안]
+
+  - id: univ_dongseo_notice
+    name: 동서대학교 평생교육원 - 일반과정 공지사항
+    org_type: 평생교육·도서관
+    district: 사상구
+    collector: generic_board
+    url: https://uni.dongseo.ac.kr/continuing/index.php?pCode=MN4000068
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: idx
+      org_name: 동서대학교 평생교육원
+      org_fixed: true
+      include: [강사, 튜터, 초빙, 인력풀, 개설 희망, 강좌 제안, 강의 제안]
+
+  - id: univ_dongseo_50plus
+    name: 동서대학교 평생교육원 - 50+생애재설계대학
+    org_type: 평생교육·도서관
+    district: 사상구
+    collector: generic_board
+    url: https://uni.dongseo.ac.kr/continuing/index.php?pCode=MN4000075
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: idx
+      org_name: 동서대학교 평생교육원
+      org_fixed: true
+      include: [강사, 튜터, 초빙, 인력풀, 개설 희망, 강좌 제안, 강의 제안]
+
+  - id: univ_tu_notice
+    name: 동명대학교 평생교육원 - 공지사항
+    org_type: 평생교육·도서관
+    district: 남구
+    collector: generic_board
+    url: https://lifedu.tu.ac.kr/LifelongEdu/Board/ANN001U.aspx?page=1
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      encoding: cp949  # charset=ks_c_5601-1987
+      key_param: seq
+      org_name: 동명대학교 평생교육원
+      org_fixed: true
+      include: [강사, 튜터, 초빙, 인력풀, 개설 희망, 강좌 제안, 강의 제안]
+
+  - id: univ_cup_notice
+    name: 부산가톨릭대학교 평생교육원 - 공지사항
+    org_type: 평생교육·도서관
+    district: 금정구
+    collector: generic_board
+    url: https://edu.cup.ac.kr/organ/edu/front/board/List402.do
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # fn_View('402','374','058000000000000','') 는 POST 로만 열린다 (View402.do?seq= 를 GET 으로 열면 목록).
+      # 글 번호(374)를 식별값으로 쓰고 링크는 목록으로
+      link_template: "https://edu.cup.ac.kr/organ/edu/front/board/List402.do?seq={1}"
+      key_param: seq
+      detail_get: false
+      org_name: 부산가톨릭대학교 평생교육원
+      org_fixed: true
+      include: [강사, 튜터, 초빙, 인력풀, 개설 희망, 강좌 제안, 강의 제안]
+
+  - id: univ_kit_notice
+    name: 경남정보대학교 평생교육원 - 공지사항
+    org_type: 평생교육·도서관
+    district: 사상구
+    collector: generic_board
+    url: https://cei.kit.ac.kr/cei/index.php?pCode=MN0000028
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: idx
+      org_name: 경남정보대학교 평생교육원
+      org_fixed: true
+      include: [강사, 튜터, 초빙, 인력풀, 개설 희망, 강좌 제안, 강의 제안]
+
+  - id: univ_ysu_notice
+    name: 영산대학교 평생교육원 (해운대) - 공지사항
+    org_type: 평생교육·도서관
+    district: 해운대구
+    collector: generic_board
+    url: https://ysedu.ysu.ac.kr/board/notice_edu/list.asp?gotopage=1
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      encoding: cp949
+      # 표 안에 표가 든 옛 게시판. 제목 링크가 있는 줄만, 날짜는 넷째 칸 'YYYY/MM/DD'
+      row_selector: "tr:has(> td a[href*='List2Content'])"
+      title_selector: "a[href*='List2Content']"
+      date_selector: "td:nth-of-type(4)"
+      key_param: board_idx
+      org_name: 영산대학교 평생교육원
+      org_fixed: true
+      include: [강사, 튜터, 초빙, 인력풀, 개설 희망, 강좌 제안, 강의 제안]
+
+  - id: univ_kosin_notice
+    name: 고신대학교 평생교육원 - 공지사항
+    org_type: 평생교육·도서관
+    district: 영도구
+    collector: generic_board
+    url: https://kosinedu.com/sub06_1
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # XE 게시판: 같은 글이 /sub06_1/2664 와 ?document_srl=2677&mid=sub06_1 두 가지 주소로 나온다
+      key_pattern: "(?:/sub06_1/|document_srl=)(\\d+)"
+      org_name: 고신대학교 평생교육원
+      org_fixed: true
+      include: [강사, 튜터, 초빙, 인력풀, 개설 희망, 강좌 제안, 강의 제안]
+
+  - id: univ_kosin_credit
+    name: 고신대학교 평생교육원 - 학점은행제 공지사항
+    org_type: 평생교육·도서관
+    district: 영도구
+    collector: generic_board
+    url: https://kosinedu.com/sub04_1
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_pattern: "(?:/sub04_1/|document_srl=)(\\d+)"  # '2022년도 학점은행제 신규 강사모집 안내' 가 올라온 게시판
+      org_name: 고신대학교 평생교육원
+      org_fixed: true
+      include: [강사, 튜터, 초빙, 인력풀, 개설 희망, 강좌 제안, 강의 제안]
+
+  - id: univ_bwc_notice
+    name: 부산여자대학교 평생교육원 - 공지사항
+    org_type: 평생교육·도서관
+    district: 부산진구
+    collector: generic_board
+    url: https://sahoi.bwc.ac.kr/04_board/?mcode=0404010000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: "no"
+      org_name: 부산여자대학교 평생교육원
+      org_fixed: true
+      include: [강사, 튜터, 초빙, 인력풀, 개설 희망, 강좌 제안, 강의 제안]
+
+  - id: univ_bist_notice
+    name: 부산과학기술대학교 평생교육원 - 공지사항
+    org_type: 평생교육·도서관
+    district: 북구
+    collector: generic_board
+    url: https://life.bist.ac.kr/sub/?mcode=0405010000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: "no"
+      org_name: 부산과학기술대학교 평생교육원
+      org_fixed: true
+      include: [강사, 튜터, 초빙, 인력풀, 개설 희망, 강좌 제안, 강의 제안]
+
+  - id: univ_daedong_notice
+    name: 대동대학교 평생교육원 - 공지사항
+    org_type: 평생교육·도서관
+    district: 금정구
+    collector: generic_board
+    url: https://lifeedu.daedong.ac.kr/lifeedu/CMS/Board/Board.do?mCode=MN046
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: board_seq
+      org_name: 대동대학교 평생교육원
+      org_fixed: true
+      include: [강사, 튜터, 초빙, 인력풀, 개설 희망, 강좌 제안, 강의 제안]
+
+  - id: univ_bdu_notice
+    name: 부산디지털대학교 평생교육원 - 공지사항
+    org_type: 평생교육·도서관
+    district: 사상구
+    collector: generic_board
+    url: https://www.bdu.ac.kr/edulife/sub07_01_01.do
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: articleNo
+      org_name: 부산디지털대학교 평생교육원
+      org_fixed: true
+      include: [강사, 튜터, 초빙, 인력풀, 개설 희망, 강좌 제안, 강의 제안]
+
+  - id: univ_kmou_notice
+    name: 국립한국해양대학교 평생교육원 - 공지사항
+    org_type: 평생교육·도서관
+    district: 영도구
+    collector: generic_board
+    url: https://www.kmou.ac.kr/edu/na/ntt/selectNttList.do?mi=426&bbsId=10304
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      ok_status: [404]  # 목록을 다 보내면서 상태 코드만 404 (GET·POST·브라우저 UA 모두 같음. 상세는 200)
+      key_param: nttSn
+      org_name: 국립한국해양대학교 평생교육원
+      org_fixed: true
+      include: [강사, 튜터, 초빙, 인력풀, 개설 희망, 강좌 제안, 강의 제안]
+
+  - id: busan_library
+    name: 부산도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 부산전체
+    collector: generic_board
+    url: https://library.busan.go.kr/busanlibrary/board/index.do?menu_idx=34&manage_idx=14
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: board_idx
+      org_name: 부산도서관
+
+  - id: simin_library
+    name: 부산시립시민도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 부산전체
+    collector: generic_board
+    url: https://home.pen.go.kr/siminlib/na/ntt/selectNttList.do?mi=13146&bbsId=3951
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_attr: data-id
+      link_template: "https://home.pen.go.kr/siminlib/na/ntt/selectNttInfo.do?mi=13146&bbsId=3951&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산광역시립시민도서관
+
+  # ─────────────────────────────── 공공도서관 공지사항 (강사 모집 글만 키워드로 거름)
+  # 공지는 대부분 수강생·참여자 모집이라 '강사'·'튜터'·'멘토' 등이 제목에 있는 글만 받는다.
+  # 작성자 칸이 '총무과'·'독서문화과'·'도서관과' 같은 부서라서 기관명은 도서관 이름으로 고정(org_fixed)
+
+  # 교육청 도서관 (시민도서관과 같은 틀: <a data-id="글번호">). 부전도서관은 재건축 휴관이라 2024-05 뒤로 글이 없어 뺐다
+  - id: lib_bansong
+    name: 부산광역시립반송도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 해운대구
+    collector: generic_board
+    url: https://home.pen.go.kr/bansonglib/na/ntt/selectNttList.do?mi=13041&bbsId=3111
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_attr: data-id
+      link_template: "https://home.pen.go.kr/bansonglib/na/ntt/selectNttInfo.do?mi=13041&bbsId=3111&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산광역시립반송도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_english
+    name: 부산영어도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 부산진구
+    collector: generic_board
+    url: https://home.pen.go.kr/bellib/na/ntt/selectNttList.do?mi=15686&bbsId=4622
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_attr: data-id
+      link_template: "https://home.pen.go.kr/bellib/na/ntt/selectNttInfo.do?mi=15686&bbsId=4622&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산영어도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_gudeok
+    name: 부산광역시립구덕도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 서구
+    collector: generic_board
+    url: https://home.pen.go.kr/guducklib/na/ntt/selectNttList.do?mi=12610&bbsId=3515
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_attr: data-id
+      link_template: "https://home.pen.go.kr/guducklib/na/ntt/selectNttInfo.do?mi=12610&bbsId=3515&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산광역시립구덕도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_gupo
+    name: 부산광역시립구포도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 북구
+    collector: generic_board
+    url: https://home.pen.go.kr/gupolib/na/ntt/selectNttList.do?mi=13330&bbsId=3893
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_attr: data-id
+      link_template: "https://home.pen.go.kr/gupolib/na/ntt/selectNttInfo.do?mi=13330&bbsId=3893&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산광역시립구포도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_myeongjang
+    name: 부산광역시립명장도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 동래구
+    collector: generic_board
+    url: https://home.pen.go.kr/mjlib/na/ntt/selectNttList.do?mi=12511&bbsId=3530
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_attr: data-id
+      link_template: "https://home.pen.go.kr/mjlib/na/ntt/selectNttInfo.do?mi=12511&bbsId=3530&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산광역시립명장도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_saha
+    name: 부산광역시립사하도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 사하구
+    collector: generic_board
+    url: https://home.pen.go.kr/sahalib/na/ntt/selectNttList.do?mi=12293&bbsId=3505
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_attr: data-id
+      link_template: "https://home.pen.go.kr/sahalib/na/ntt/selectNttInfo.do?mi=12293&bbsId=3505&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산광역시립사하도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_seodong
+    name: 부산광역시교육청서동도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 금정구
+    collector: generic_board
+    url: https://home.pen.go.kr/seodonglib/na/ntt/selectNttList.do?mi=13655&bbsId=3718
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_attr: data-id
+      link_template: "https://home.pen.go.kr/seodonglib/na/ntt/selectNttInfo.do?mi=13655&bbsId=3718&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산광역시교육청서동도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_yeonsan
+    name: 부산광역시립연산도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 연제구
+    collector: generic_board
+    url: https://home.pen.go.kr/yeonsanlib/na/ntt/selectNttList.do?mi=13431&bbsId=3702
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_attr: data-id
+      link_template: "https://home.pen.go.kr/yeonsanlib/na/ntt/selectNttInfo.do?mi=13431&bbsId=3702&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산광역시립연산도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_joongang
+    name: 부산광역시립중앙도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 중구
+    collector: generic_board
+    url: https://home.pen.go.kr/joonganglib/na/ntt/selectNttList.do?mi=11009&bbsId=3690
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_attr: data-id
+      link_template: "https://home.pen.go.kr/joonganglib/na/ntt/selectNttInfo.do?mi=11009&bbsId=3690&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산광역시립중앙도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_haeundae
+    name: 부산광역시립해운대도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 해운대구
+    collector: generic_board
+    url: https://home.pen.go.kr/haeundaelib/na/ntt/selectNttList.do?mi=12022&bbsId=3485
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_attr: data-id
+      link_template: "https://home.pen.go.kr/haeundaelib/na/ntt/selectNttInfo.do?mi=12022&bbsId=3485&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산광역시립해운대도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # 사하구 평생학습관과 같은 틀: boardView('listForm', 작성자, 공개여부, 글번호, ptIdx, mId, 쪽)
+  - id: lib_dadae
+    name: 사하구 다대도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 사하구
+    collector: generic_board
+    url: https://www.saha.go.kr/dadaelib/bbs/list.do?ptIdx=660&mId=0509000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://www.saha.go.kr/dadaelib/bbs/view.do?bIdx={3}&ptIdx={4}&mId={5}"
+      key_param: bIdx
+      org_name: 사하구 다대도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_hadan
+    name: 사하구 하단도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 사하구
+    collector: generic_board
+    url: https://www.saha.go.kr/hadanlib/bbs/list.do?ptIdx=761&mId=0601000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://www.saha.go.kr/hadanlib/bbs/view.do?bIdx={3}&ptIdx={4}&mId={5}"
+      key_param: bIdx
+      org_name: 사하구 하단도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # 기장군 도서관 8곳은 한 게시판(ptIdx=207)을 나눠 쓰고, 도서관마다 자기 글과 '공통' 글만 보여 준다
+  # (모두 보이는 목록이 없음). '공통' 글이 겹치면 다른 게시판 같은 공고로 한 번만 알린다
+  # goTo.view('list', 글번호, ptIdx, mId)
+  - id: lib_gj_gijang
+    name: 기장군 기장도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 기장군
+    collector: generic_board
+    url: https://library.gijang.go.kr/gijang/bbs/list.do?ptIdx=207&mId=0501000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://library.gijang.go.kr/gijang/bbs/view.do?bIdx={1}&ptIdx={2}&mId={3}"
+      key_param: bIdx
+      org_name: 기장군 기장도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_gj_jeonggwan
+    name: 기장군 정관도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 기장군
+    collector: generic_board
+    url: https://library.gijang.go.kr/jglib/bbs/list.do?ptIdx=207&mId=0501000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://library.gijang.go.kr/jglib/bbs/view.do?bIdx={1}&ptIdx={2}&mId={3}"
+      key_param: bIdx
+      org_name: 기장군 정관도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_gj_jgchild
+    name: 기장군 정관에듀파크어린이도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 기장군
+    collector: generic_board
+    url: https://library.gijang.go.kr/jgchildlib/bbs/list.do?ptIdx=207&mId=0501000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://library.gijang.go.kr/jgchildlib/bbs/view.do?bIdx={1}&ptIdx={2}&mId={3}"
+      key_param: bIdx
+      org_name: 기장군 정관에듀파크어린이도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_gj_gochon
+    name: 기장군 고촌어울림도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 기장군
+    collector: generic_board
+    url: https://library.gijang.go.kr/gochon/bbs/list.do?ptIdx=207&mId=0401000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://library.gijang.go.kr/gochon/bbs/view.do?bIdx={1}&ptIdx={2}&mId={3}"
+      key_param: bIdx
+      org_name: 기장군 고촌어울림도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_gj_naeri
+    name: 기장군 내리새라도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 기장군
+    collector: generic_board
+    url: https://library.gijang.go.kr/naeri/bbs/list.do?ptIdx=207&mId=0401000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://library.gijang.go.kr/naeri/bbs/view.do?bIdx={1}&ptIdx={2}&mId={3}"
+      key_param: bIdx
+      org_name: 기장군 내리새라도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_gj_gyori
+    name: 기장군 교리도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 기장군
+    collector: generic_board
+    url: https://library.gijang.go.kr/gyori/bbs/list.do?ptIdx=207&mId=0501000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://library.gijang.go.kr/gyori/bbs/view.do?bIdx={1}&ptIdx={2}&mId={3}"
+      key_param: bIdx
+      org_name: 기장군 교리도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_gj_ilgwang
+    name: 기장군 일광도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 기장군
+    collector: generic_board
+    url: https://library.gijang.go.kr/ilgwang/bbs/list.do?ptIdx=207&mId=0501000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://library.gijang.go.kr/ilgwang/bbs/view.do?bIdx={1}&ptIdx={2}&mId={3}"
+      key_param: bIdx
+      org_name: 기장군 일광도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_gj_igchild
+    name: 기장군 일광어린이도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 기장군
+    collector: generic_board
+    url: https://library.gijang.go.kr/igchildlib/bbs/list.do?ptIdx=207&mId=0501000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://library.gijang.go.kr/igchildlib/bbs/view.do?bIdx={1}&ptIdx={2}&mId={3}"
+      key_param: bIdx
+      org_name: 기장군 일광어린이도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # 동래구·강서구 도서관 (같은 게시판 프로그램: ...&bb_code=글번호&view=read)
+  - id: lib_dongnae
+    name: 동래구 동래읍성도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 동래구
+    collector: generic_board
+    url: https://dongnae.go.kr/lib/dongnae/index.php?g_page=community&m_page=community01
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: bb_code
+      org_name: 동래구 동래읍성도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_allak
+    name: 동래구 안락누리도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 동래구
+    collector: generic_board
+    url: https://dongnae.go.kr/lib/allak/index.php?g_page=community&m_page=community01
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: bb_code
+      org_name: 동래구 안락누리도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_gs_miracle
+    name: 강서기적의도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 강서구
+    collector: generic_board
+    url: https://library.bsgangseo.go.kr/gmlib/index.php?g_page=community&m_page=community01
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: bb_code
+      org_name: 강서기적의도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_gs_gangseo
+    name: 강서구 강서도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 강서구
+    collector: generic_board
+    url: https://library.bsgangseo.go.kr/gslib/index.php?g_page=community&m_page=community01
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: bb_code
+      org_name: 강서구 강서도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_gs_jisa
+    name: 강서구 지사도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 강서구
+    collector: generic_board
+    url: https://library.bsgangseo.go.kr/jslib/index.php?g_page=community&m_page=community01
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: bb_code
+      org_name: 강서구 지사도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # 구청 누리집 틀 도서관 (글번호 dataSid)
+  # 금정구청 누리집(www.geumjeong.go.kr)은 2026-09-29 해외 접속이 막혔으나 2026-09-30 러너 세 대에서는 열림
+  - id: lib_geumsaem
+    name: 금정구 금샘도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 금정구
+    collector: generic_board
+    url: https://www.geumjeong.go.kr/gslib/board/list.geumj?boardId=BBS_0000341&menuCd=DOM_000001705001000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 금정구 금샘도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_geumgok
+    name: 북구 금곡도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 북구
+    collector: generic_board
+    url: https://www.bsbukgu.go.kr/bglib/board/list.bsbukgu?boardId=BBS_0000103&menuCd=DOM_000001306001000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 북구 금곡도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_deokcheon
+    name: 북구 덕천도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 북구
+    collector: generic_board
+    url: https://www.bsbukgu.go.kr/dclib/board/list.bsbukgu?boardId=BBS_0000270&menuCd=DOM_000002306001000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 북구 덕천도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_hwamyeong
+    name: 북구 화명도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 북구
+    collector: generic_board
+    url: https://www.bsbukgu.go.kr/hmlib/board/list.bsbukgu?boardId=BBS_0000100&menuCd=DOM_000001206001000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 북구 화명도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_mandeok
+    name: 북구 만덕도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 북구
+    collector: generic_board
+    url: https://www.bsbukgu.go.kr/mdlib/board/list.bsbukgu?boardId=BBS_0000097&menuCd=DOM_000001106001000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 북구 만덕도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_donggu
+    name: 동구도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 동구
+    collector: generic_board
+    url: https://www.bsdonggu.go.kr/board/list.donggu?boardId=BBS_0000083&menuCd=DOM_000000806001000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 동구도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_donggu_english
+    name: 동구어린이영어도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 동구
+    collector: generic_board
+    url: https://www.bsdonggu.go.kr/board/list.donggu?boardId=BBS_0000261&menuCd=DOM_000002206001000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 동구어린이영어도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # 부산진구 도서관(기적의·당감·어린이청소년·작은도서관)이 함께 쓰는 공지
+  - id: lib_busanjin
+    name: 부산진구통합도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 부산진구
+    collector: generic_board
+    url: https://www.busanjin.go.kr/library/board/list.busanjin?boardId=BBS_0000273&menuCd=DOM_000002106001000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 부산진구통합도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_sasang
+    name: 사상도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 사상구
+    collector: generic_board
+    url: https://www.sasang.go.kr/library/board/list.sasang?boardId=BBS_0000125&menuCd=DOM_000000506001000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 사상도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_jurye
+    name: 사상구 주례열린도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 사상구
+    collector: generic_board
+    url: https://www.sasang.go.kr/jrlib/board/list.sasang?boardId=BBS_0000291&menuCd=DOM_000001405001000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 사상구 주례열린도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_seogu_ami
+    name: 서구아미드림도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 서구
+    collector: generic_board
+    url: https://www.bsseogu.go.kr/amlib/portal/board/post/list.do?bcIdx=500&mid=0801000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_attr: data-req-get-p-idx  # <a data-req-get-p-idx="379" onclick="yhLib.inline.post(this)">
+      link_template: "https://www.bsseogu.go.kr/amlib/portal/board/post/view.do?idx={0}&bcIdx=500&mid=0801000000"
+      key_param: idx
+      org_name: 서구아미드림도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # 영도구 도서관: 표가 아닌 <li> 목록 (제목 strong.t1, 본문 요약 span.t2, 작성일 span.t3)
+  - id: lib_yeongdo
+    name: 영도도서관 - 알림
+    org_type: 평생교육·도서관
+    district: 영도구
+    collector: generic_board
+    url: https://www.yeongdo.go.kr/library/01349/01352/01354.web
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      row_selector: "ul.lst1 > li.li1"
+      title_selector: "strong.t1"
+      date_selector: "span.t3"  # 첫 번째 t3 가 작성일
+      key_param: idx
+      org_name: 영도구 영도도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_yeongdo_namhang
+    name: 영도도서관 남항분관 - 알림
+    org_type: 평생교육·도서관
+    district: 영도구
+    collector: generic_board
+    url: https://www.yeongdo.go.kr/library/01349/01352/01355.web
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      row_selector: "ul.lst1 > li.li1"
+      title_selector: "strong.t1"
+      date_selector: "span.t3"  # 첫 번째 t3 가 작성일
+      key_param: idx
+      org_name: 영도구 영도도서관 남항분관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # 연제구 평생학습과 같은 틀: <a data-action="/library/bbs/view.do?bIdx=…&ptIdx=80">
+  - id: lib_yeonje
+    name: 연제구 연제도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 연제구
+    collector: generic_board
+    url: https://www.yeonje.go.kr/library/bbs/list.do?ptIdx=80&mId=0701000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_attr: data-action
+      link_template: "https://www.yeonje.go.kr{0}&mId=0701000000"
+      key_param: bIdx
+      org_name: 연제구 연제도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: lib_yeonje_manhwa
+    name: 연제구 연제만화도서관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 연제구
+    collector: generic_board
+    url: https://www.yeonje.go.kr/manhwalib/bbs/list.do?ptIdx=251&mId=0601000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_attr: data-action
+      link_template: "https://www.yeonje.go.kr{0}&mId=0601000000"
+      key_param: bIdx
+      org_name: 연제구 연제만화도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # ─────────────────────────────── 문화원·문화회관 (문화강좌 강사 모집)
+  # 구 문화원은 분기마다 문화강좌를 열고 '강사모집'·'강사 채용 공고'를 공지사항에 올린다 (동래·부산진·남구·사하 시험 수집에서 확인).
+  # 공지 대부분이 수강생 모집이라 도서관과 같은 키워드로 거르고, 기관명은 고정(org_fixed)
+  # 넣지 않은 곳: 영도(ydculture.com)·수영(suyeongcc.or.kr)·북구낙동(nakdong.or.kr) 문화원은 해외 접속 403,
+  #   사상문화원(sasangculture.or.kr)은 자동 접속 확인(cupid.js), 강서·연제 문화원은 목록을 스크립트로 그림,
+  #   해운대문화회관은 www.haeundae.go.kr 이 러너에서 DNS 실패 (2026-09-30~10-02)
+  - id: culture_junggu_notice
+    name: 부산광역시중구문화원 - 공지사항
+    org_type: 평생교육·도서관
+    district: 중구
+    collector: generic_board
+    url: https://www.bsjunggucc.com/sub/template.php?midx=50
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: intnum  # template.php?midx=50&mode=view&intnum=457 (청소년활동진흥센터와 같은 틀)
+      org_name: 부산광역시중구문화원
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: culture_seogu_notice
+    name: 부산서구문화원 - 공지사항
+    org_type: 평생교육·도서관
+    district: 서구
+    collector: generic_board
+    url: https://www.seogucc.or.kr/bbs/board.php?bo_table=notice
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 그누보드 <li> 목록 (div.fz-subject · div.fz-date '09.23')
+      row_selector: "li:has(a.list-subject)"
+      title_selector: "a.list-subject"
+      date_selector: "div.fz-date"
+      key_param: wr_id
+      org_name: 부산서구문화원
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: culture_donggu_notice
+    name: 부산동구문화원 - 공지사항
+    org_type: 평생교육·도서관
+    district: 동구
+    collector: generic_board
+    url: http://bdgcc.or.kr/sb51.php
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 레이아웃 표 안의 목록. 제목 칸 onclick="location.href='/sb51.php?md=V&idx=337…'"
+      row_selector: "tr:has(> td[onclick*='md=V'])"
+      key_param: idx
+      org_name: 부산동구문화원
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: culture_busanjin_notice
+    name: 부산진문화원 - 공지사항 (강사모집)
+    org_type: 평생교육·도서관
+    district: 부산진구
+    collector: generic_board
+    url: http://busanjin.kccf.or.kr/board/notice.php
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # <tr class="data-cont" data-idx="202"><a class="act_view" href="#"> → 스크립트가 ?mode=view&idx= 로 연다
+      row_selector: "tr.data-cont"
+      link_attr: data-idx
+      link_template: "http://busanjin.kccf.or.kr/board/notice.php?mode=view&idx={0}"
+      key_param: idx
+      org_name: 부산진문화원
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: culture_dongnae_notice
+    name: 동래문화원 - 공지사항 (강사모집)
+    org_type: 평생교육·도서관
+    district: 동래구
+    collector: generic_board
+    url: http://dongnae.kccf.or.kr/home/main/madang.php?menuinfo_code=notice
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 한국문화원연합회 옛 누리집 (EUC-KR 이라고 적지만 cp949 글자가 섞여 cp949 로 읽어야 함)
+      encoding: cp949
+      row_selector: "tr:has(> td > a[href*='content_idx'])"
+      key_param: content_idx
+      org_name: 동래문화원
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: culture_namgu_notice
+    name: 부산남구문화원 - 공지사항 (강사 채용 공고)
+    org_type: 평생교육·도서관
+    district: 남구
+    collector: generic_board
+    url: http://www.bsnamgucc.or.kr/app/notice
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 부산남구문화원  # 글 주소가 /app/notice/제목-슬러그 라서 주소 전체를 식별값으로
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: culture_haeundae_notice
+    name: 해운대문화원 - 공지사항
+    org_type: 평생교육·도서관
+    district: 해운대구
+    collector: generic_board
+    url: http://www.hudcc.or.kr/board/bbs.asp?code=news
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # <li> 목록 (a.cell_cont 안 strong 제목, span.date)
+      row_selector: "li:has(> a.cell_cont)"
+      title_selector: "a.cell_cont"
+      date_selector: "span.date"
+      key_param: num
+      org_name: 해운대문화원
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: culture_saha_notice
+    name: 사하문화원 - 공지사항 (노래교실 강사 채용 등)
+    org_type: 평생교육·도서관
+    district: 사하구
+    collector: generic_board
+    url: http://sahacc.kr/notice/
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: vid
+      org_name: 사하문화원
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: culture_geumjeong_notice
+    name: 금정문화원 - 공지사항
+    org_type: 평생교육·도서관
+    district: 금정구
+    collector: generic_board
+    url: http://www.kumjung.or.kr/sub/template.php?midx=50
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: intnum
+      org_name: 금정문화원
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: culture_gijang_notice
+    name: 기장문화원 - 공지사항
+    org_type: 평생교육·도서관
+    district: 기장군
+    collector: generic_board
+    url: http://gijangcc.or.kr/yard_2/01.php
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: "no"  # YAML 에서 따옴표 없는 no 는 false
+      org_name: 기장문화원
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # 문화예술교육 기관 (2026-10-03): 부산문화재단 부산문화예술교육지원센터, 교육청 직속 학생예술문화회관·학생교육문화회관·학생인성교육원
+  - id: culture_bsarte_notice
+    name: 부산문화예술교육지원센터 (부산문화재단) - 공지사항
+    org_type: 평생교육·도서관
+    district: 부산전체
+    collector: generic_board
+    url: https://bsarte.bscf.or.kr/board/lists/1
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_pattern: "/board/view/1/(\\d+)"
+      org_name: 부산문화예술교육지원센터
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]  # 참여자 모집이 대부분
+
+  - id: pen_bacs_notice
+    name: 부산광역시교육청학생예술문화회관 - 공지사항
+    org_type: 교육청·학교
+    district: 부산전체
+    collector: generic_board
+    url: https://home.pen.go.kr/bacs/na/ntt/selectNttList.do?mi=10447&bbsId=3402
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 교육청 게시판과 같은 <a data-id>
+      link_attr: data-id
+      link_template: "https://home.pen.go.kr/bacs/na/ntt/selectNttInfo.do?mi=10447&bbsId=3402&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산광역시교육청학생예술문화회관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: pen_becs_notice
+    name: 부산광역시교육청학생교육문화회관 - 공지사항
+    org_type: 교육청·학교
+    district: 부산진구
+    collector: generic_board
+    url: https://home.pen.go.kr/becs/na/ntt/selectNttList.do?mi=10400&bbsId=3146
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_attr: data-id
+      link_template: "https://home.pen.go.kr/becs/na/ntt/selectNttInfo.do?mi=10400&bbsId=3146&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산광역시교육청학생교육문화회관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: pen_bsec_notice
+    name: 부산광역시교육청학생인성교육원 - 공지사항
+    org_type: 교육청·학교
+    district: 부산전체
+    collector: generic_board
+    url: https://home.pen.go.kr/bsec/na/ntt/selectNttList.do?mi=10652&bbsId=3244
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # '외부강사 추가선발' 공고가 올라옴
+      link_attr: data-id
+      link_template: "https://home.pen.go.kr/bsec/na/ntt/selectNttInfo.do?mi=10652&bbsId=3244&nttSn={0}"
+      key_param: nttSn
+      org_name: 부산광역시교육청학생인성교육원
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: hall_bscc_news
+    name: 부산문화회관 - 새소식 (공지·채용공고)
+    org_type: 평생교육·도서관
+    district: 부산전체
+    collector: generic_board
+    url: https://www.bscc.or.kr/05_community/?mcode=0405010000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: "no"
+      org_name: 부산문화회관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: hall_dongnae_notice
+    name: 동래문화회관 - 공지사항
+    org_type: 평생교육·도서관
+    district: 동래구
+    collector: generic_board
+    url: https://www.dongnae.go.kr/culture/board/list.dongnae?boardId=BBS_0000226&menuCd=DOM_000000606001000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      org_name: 동래문화회관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: hall_geumjeong_notice
+    name: 금정문화회관 - 공지사항 (문화예술아카데미)
+    org_type: 평생교육·도서관
+    district: 금정구
+    collector: generic_board
+    url: https://art.geumjeong.go.kr/sub/template.asp?midx=63
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: intnum
+      org_name: 금정문화회관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: hall_gjfac_notice
+    name: 금정문화재단 - 공지사항
+    org_type: 평생교육·도서관
+    district: 금정구
+    collector: generic_board
+    url: https://www.gjfac.org/gjfac/template.php?midx=347
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: intnum
+      org_name: 금정문화재단
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: hall_gjfac_hire
+    name: 금정문화재단 - 채용공고
+    org_type: 평생교육·도서관
+    district: 금정구
+    collector: generic_board
+    url: https://www.gjfac.org/gjfac/template.php?midx=349
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: intnum
+      org_name: 금정문화재단
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # 문화센터 다시 찾기 2차 (2026-10-04): 미디어센터·영화관·국악원·미술관처럼 강좌를 여는 공공 문화시설
+  - id: media_kcmf_busan_notice
+    name: 시청자미디어재단 부산시청자미디어센터 - 공지사항 (체험·보조강사 모집)
+    org_type: 평생교육·도서관
+    district: 해운대구
+    collector: generic_board
+    url: https://kcmf.or.kr/KCMF/contents/KCMF050107.do
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # <a onclick="fn_goView('CJSONOIHhcctr_ul9r1-R_a9R4N3Cud2xksvkc6Eu58')"> → ?schM=view&id= (값은 러너 세 대에서 같음)
+      link_template: "https://kcmf.or.kr/KCMF/contents/KCMF050107.do?schM=view&id={0}"
+      key_param: id
+      org_name: 부산시청자미디어센터
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: hall_dureraum_notice
+    name: 영화의전당 - 공지사항 (들락날락·서부산영상미디어센터 강사풀 모집)
+    org_type: 평생교육·도서관
+    district: 해운대구
+    collector: generic_board
+    url: https://www.dureraum.org/bcc/board/list.do?rbsIdx=46
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: idx
+      org_name: 영화의전당
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: hall_gugak_notice
+    name: 국립부산국악원 - 공지사항 (외부강사 모집)
+    org_type: 평생교육·도서관
+    district: 부산진구
+    collector: generic_board
+    url: https://busan.gugak.go.kr/BG/contents/BG0402010000.do
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://busan.gugak.go.kr/BG/contents/BG0402010000.do?schM=view&id={0}"  # fn_goView('20260804110102928264')
+      key_param: id
+      title_selector: td.taL b  # 링크 안 새 글 표시 <em class="new">N</em> 은 뺌
+      org_name: 국립부산국악원
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: hall_gugak_hire
+    name: 국립부산국악원 - 채용정보
+    org_type: 평생교육·도서관
+    district: 부산진구
+    collector: generic_board
+    # 2023년까지는 외부강사 모집을 여기에 올림 (2026년은 공지사항)
+    url: https://busan.gugak.go.kr/BG/contents/BG0402020000.do
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://busan.gugak.go.kr/BG/contents/BG0402020000.do?schM=view&id={0}"
+      key_param: id
+      title_selector: td.taL b
+      org_name: 국립부산국악원
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: hall_bma_notice
+    name: 부산시립미술관 - 고시공고 (채용)
+    org_type: 평생교육·도서관
+    district: 해운대구
+    collector: generic_board
+    url: https://art.busan.go.kr/anucmt/list.nm
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://art.busan.go.kr/anucmt/view.nm?tta_seq={0}"  # javascript:viewProc('101')
+      key_param: tta_seq
+      org_name: 부산시립미술관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # ─────────────────────────────── 청소년·여성
+  - id: busanyouth_notice
+    name: 부산청소년활동진흥센터 - 공지사항 (청소년 교육강사 모집 등)
+    org_type: 청소년
+    district: 부산전체
+    collector: generic_board
+    url: https://www.busanyouth.net/sub/template.php?midx=48
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: intnum
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]  # '예비청소년지도자 연수'·'방과후아카데미 청소년 모집' 은 거름
+      org_name: 부산청소년활동진흥센터
+
+  - id: busanyouth_hire
+    name: 부산청소년활동진흥센터 - 채용정보 (부산 청소년시설 채용 모음)
+    org_type: 청소년
+    district: 부산전체
+    collector: generic_board
+    # 청소년수련관·문화의집·청소년센터·상담복지센터 등의 채용 공고가 모인다 (직원 채용이 대부분)
+    url: https://www.busanyouth.net/sub/template.php?midx=138
+    pages: 2
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: page
+      # <div class="newsBlist"><ul><li>: 제목 칸에 기관 이름이 먼저 나오고, '바로가기'는 u_re('글번호','실제 공고 주소')
+      row_selector: "div.newsBlist > ul > li"
+      title_selector: ".tit"
+      org_selector: ".tit > span"
+      date_selector: ".date"
+      link_template: "{1}"
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]  # '청소년지도사 채용'(직원)은 거름
+
+  - id: youth_assoc_hire
+    name: 부산광역시청소년수련시설협회 - 채용공고 (회원 수련관·문화의집·청소년센터 채용 모음)
+    org_type: 청소년
+    district: 부산전체
+    collector: generic_board
+    url: http://bsyouth.or.kr/sub31.php
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 사상구청소년센터와 같은 제작사 게시판 (?md=V&idx=글번호). '청소년방과후아카데미 담임'·'청소년 교육과정 강사 모집' 이 올라옴
+      key_param: idx
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 부산광역시청소년수련시설협회
+
+  # 청소년성문화센터·청소년종합지원센터 (사상구 모덕로 82 청소년종합지원센터 건물). 같은 게시판 프로그램(bbs_shop)
+  - id: youth_say_notice
+    name: 부산광역시청소년성문화센터 - 공지사항
+    org_type: 청소년
+    district: 사상구
+    collector: generic_board
+    url: http://www.bsycsay.or.kr/bbs/board  # https 는 인증서가 맞지 않음
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      title_selector: "td.subject a > span"  # 제목 뒤 아이콘 글자('photo'·'file')를 뺀다
+      key_param: idx
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 부산광역시청소년성문화센터
+
+  - id: youth_onestop_notice
+    name: 부산광역시청소년종합지원센터 - 공지사항
+    org_type: 청소년
+    district: 사상구
+    collector: generic_board
+    url: http://www.busanonestop.or.kr/bbs/rwdboard
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 청소년자립지원관 채용도 여기에 함께 올라옴
+      title_selector: "td.subject a > span"
+      key_param: idx
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 부산광역시청소년종합지원센터
+
+  # 청소년수련관 (부산청소년활동진흥센터 '부산 청소년 시설' 현황의 청소년수련관 9곳). 강사 모집은 각 수련관 공지·채용 게시판에 올라온다.
+  # 청소년 기관 게시판에는 '청소년지도사 채용'(직원)·'방과후아카데미 청소년 모집'(학생) 글이 많아 포함 키워드를 강사·코치로 좁힌다
+  - id: youthcool_notice
+    name: 금정청소년수련관 - 공지사항
+    org_type: 청소년
+    district: 금정구
+    collector: generic_board
+    url: https://www.youthcool.or.kr/SW_bbs/notice/list.php?zipEncode==atpLrxydrMCH9MyMu2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 부산광역시금정청소년수련관
+
+  - id: onnainna_hire
+    name: 동래구청소년센터 - 채용공고
+    org_type: 청소년
+    district: 동래구
+    collector: generic_board
+    url: https://www.onnainna.kr/community/employment_board
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: "no"
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 동래구청소년센터
+
+  - id: onnainna_notice
+    name: 동래구청소년센터 - 공지사항
+    org_type: 청소년
+    district: 동래구
+    collector: generic_board
+    url: https://www.onnainna.kr/community/notice_board
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: "no"
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 동래구청소년센터
+
+  - id: power0924_notice
+    name: 양정청소년수련관 - 공지사항
+    org_type: 청소년
+    district: 부산진구
+    collector: generic_board
+    url: https://www.power0924.org/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 부산광역시양정청소년수련관
+
+  - id: kumgok_notice
+    name: 금곡청소년수련관 - 공지사항
+    org_type: 청소년
+    district: 북구
+    collector: generic_board
+    url: http://kum-gok.or.kr/p41.php
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 같은 제작사 게시판: 제목 칸 <td onclick="location.href='?md=V&idx=글번호'">. 메뉴 표도 td onclick 이라 행을 지정
+      row_selector: "tr:has(> td[onclick*='md=V'])"
+      key_param: idx
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 부산광역시금곡청소년수련관
+
+  - id: yzzang_hire
+    name: 사상구청소년센터 - 채용안내
+    org_type: 청소년
+    district: 사상구
+    collector: generic_board
+    url: https://www.yzzang.com/sb55.php
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 같은 제작사 게시판: 제목 칸 <td onclick="location.href='?md=V&idx=글번호'">. 메뉴 표도 td onclick 이라 행을 지정
+      row_selector: "tr:has(> td[onclick*='md=V'])"
+      key_param: idx
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 사상구청소년센터
+
+  - id: yzzang_notice
+    name: 사상구청소년센터 - 공지사항
+    org_type: 청소년
+    district: 사상구
+    collector: generic_board
+    url: https://www.yzzang.com/sb51.php
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 같은 제작사 게시판: 제목 칸 <td onclick="location.href='?md=V&idx=글번호'">. 메뉴 표도 td onclick 이라 행을 지정
+      row_selector: "tr:has(> td[onclick*='md=V'])"
+      key_param: idx
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 사상구청소년센터
+
+  - id: gudeok_notice
+    name: 구덕청소년수련관 - 공지사항
+    org_type: 청소년
+    district: 서구
+    collector: generic_board
+    url: https://gudeok.or.kr/sb51.php
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 같은 제작사 게시판: 제목 칸 <td onclick="location.href='?md=V&idx=글번호'">. 메뉴 표도 td onclick 이라 행을 지정
+      row_selector: "tr:has(> td[onclick*='md=V'])"
+      key_param: idx
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 구덕청소년수련관
+
+  - id: ymcahy_notice
+    name: 해운대청소년수련관 - 공지사항
+    org_type: 청소년
+    district: 해운대구
+    collector: generic_board
+    url: http://www.ymcahy.or.kr/bbs/board.php?bo_table=notice
+    keyword_filter: true
+    phase: 3
+    enabled: false
+    verified: false
+    blocked: 해외(GitHub 러너)에서 접속 시간 초과 (http·https 모두, 2026-09-29 세 번). 채용 공고는 청소년활동진흥센터 채용정보(busanyouth_hire)에도 올라옴
+
+  # 청소년문화의집 (부산청소년활동진흥센터 '부산 청소년 시설' 현황의 문화의집 10곳). 방과후아카데미 강사 모집·직원 채용이 공지사항에 올라온다
+  - id: gaya_youth_notice
+    name: 부산진구 가야 청소년센터 - 공지사항
+    org_type: 청소년
+    district: 부산진구
+    collector: generic_board
+    # https 는 인증서 이름이 달라 http
+    url: http://gayayouth.or.kr/p41.php
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 청소년수련관과 같은 제작사 게시판: 제목 칸 <td onclick="location.href='?md=V&idx=글번호'">
+      row_selector: "tr:has(> td[onclick*='md=V'])"
+      key_param: idx
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 부산진구 가야 청소년센터
+
+  - id: bujeon_youth_notice
+    name: 부산진구 부전 청소년센터 - 공지사항
+    org_type: 청소년
+    district: 부산진구
+    collector: generic_board
+    # XE 게시판. 부산진구통합방과후학교 개인위탁강사 모집이 자주 올라옴.
+    # 짧은 시간에 여러 번 접속하면 한동안 연결을 받지 않음 (그런 날은 catch-up 에서 다시 받음)
+    url: https://teenstory.kr/xe/sub7_01
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 공지 줄은 /xe/sub7_01/24564, 일반 줄은 index.php?…&document_srl=24556 → 글번호만 식별값으로
+      key_pattern: "(?:document_srl=|/)(\\d+)(?:&|$)"
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 부산진구 부전 청소년센터
+
+  - id: gijang_youth_notice
+    name: 기장청소년센터 - 새소식
+    org_type: 청소년
+    district: 기장군
+    collector: generic_board
+    # 기장군도시관리공단 누리집 안의 센터 게시판 (EUC-KR). 직원 채용은 공단 채용정보(gijangcmc_hire)로 받음
+    url: https://www.gijangcmc.or.kr/youthcenter/01_info/01_info.asp?id=Notice&wr_7=%B1%E2%C0%E5%C3%BB%BC%D2%B3%E2%BC%BE%C5%CD
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: idx
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 기장청소년센터
+
+  - id: jeonpo_youth
+    name: 부산진구 전포 청소년센터 (jinguzzang.com)
+    org_type: 청소년
+    district: 부산진구
+    collector: generic_board
+    url: https://www.jinguzzang.com/
+    keyword_filter: true
+    phase: 3
+    enabled: false
+    verified: false
+    blocked: 해외(GitHub 러너)에서 모든 주소가 403 '접근 권한이 없습니다' (http·https·www 유무, 브라우저 User-Agent 로도 같음, 2026-09-29). 직원 채용은 청소년활동진흥센터 채용정보(busanyouth_hire)에도 올라옴
+
+  - id: bkyouth_notice
+    name: 북구청소년문화의집 - 공지사항
+    org_type: 청소년
+    district: 북구
+    collector: generic_board
+    # XE 게시판 (https 는 인증서 체인이 불완전해 http)
+    url: http://bkyouth.or.kr/notice
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 북구청소년문화의집
+
+  - id: sahayouth_notice
+    name: 사하구청소년문화의집 - 공지사항
+    org_type: 청소년
+    district: 사하구
+    collector: generic_board
+    # https 는 인증서 이름이 달라 http
+    url: http://sahayouth.or.kr/sb71.php
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 청소년수련관과 같은 제작사 게시판: 제목 칸 <td onclick="location.href='?md=V&idx=글번호'">
+      row_selector: "tr:has(> td[onclick*='md=V'])"
+      key_param: idx
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 사하구청소년문화의집
+
+  - id: seoguyouth_notice
+    name: 서구청소년문화의집 - 공지사항
+    org_type: 청소년
+    district: 서구
+    collector: generic_board
+    url: https://www.seoguyouth.co.kr/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 서구청소년문화의집
+
+  - id: seeyouth_notice
+    name: 수영구청소년문화의집 - 공지사항
+    org_type: 청소년
+    district: 수영구
+    collector: generic_board
+    # https 는 인증서 이름이 달라 http
+    url: http://www.seeyouth.or.kr/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 수영구청소년문화의집
+
+  - id: purun1318_notice
+    name: 중구청소년문화의집 - 공지사항
+    org_type: 청소년
+    district: 중구
+    collector: generic_board
+    url: https://purun1318.org/sb51.php
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 청소년수련관과 같은 제작사 게시판: 제목 칸 <td onclick="location.href='?md=V&idx=글번호'">. PC·모바일용 목록이 둘 다 있어 PC 쪽만
+      row_selector: "#only_pc tr:has(> td[onclick*='md=V'])"
+      key_param: idx
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 중구청소년문화의집
+
+  - id: haeundae_youth_notice
+    name: 해운대청소년문화의집 - 공지사항
+    org_type: 청소년
+    district: 해운대구
+    collector: generic_board
+    # 해운대구청 CMS (평생학습관과 같은 게시판). '든솔' 방과후아카데미 전문강사 모집이 올라옴
+    url: https://www.haeundae.go.kr/young/board/list.do?boardId=BBS_0000300&menuCd=DOM_000001305001000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 해운대청소년문화의집
+
+  # 청소년상담복지센터 (부산광역시청소년상담복지센터 '부산지역 청소년상담복지센터' 목록의 16곳). 집단상담·예방교육 강사 모집과 직원 채용이 공지사항에 올라온다
+  - id: cando_notice
+    name: 부산광역시청소년상담복지센터 - 공지사항
+    org_type: 청소년
+    district: 부산전체
+    collector: generic_board
+    url: http://www.cando.or.kr/bbs/board.php?bo_table=notice
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 부산광역시청소년상담복지센터
+  - id: cando_recruit
+    name: 부산광역시청소년상담복지센터 - 채용정보
+    org_type: 청소년
+    district: 부산전체
+    collector: generic_board
+    url: http://www.cando.or.kr/bbs/board.php?bo_table=recruit
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 부산광역시청소년상담복지센터
+  - id: gjyouth1388_notice
+    name: 금정구청소년상담복지센터 - 공지사항
+    org_type: 청소년
+    district: 금정구
+    collector: generic_board
+    url: https://www.gjyouth1388.or.kr/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 금정구청소년상담복지센터
+  - id: namgu1388_notice
+    name: 남구청소년상담복지센터 - 공지사항
+    org_type: 청소년
+    district: 남구
+    collector: generic_board
+    url: https://www.namgu1388.kr/notice
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 남구청소년상담복지센터
+  - id: bukgu1388_notice
+    name: 북구청소년상담복지센터 - 공지사항
+    org_type: 청소년
+    district: 북구
+    collector: generic_board
+    # 북구청 누리집 안의 센터 게시판
+    url: https://www.bsbukgu.go.kr/youth/board/list.bsbukgu?boardId=BBS_0000064&menuCd=DOM_000000904001000000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: dataSid
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 북구청소년상담복지센터
+  - id: gijang1388_notice
+    name: 기장군청소년상담복지센터 - 공지사항
+    org_type: 청소년
+    district: 기장군
+    collector: generic_board
+    # 기장군도시관리공단 누리집 안의 센터 게시판 (EUC-KR, 기장청소년센터 새소식과 같은 형식)
+    url: https://www.gijangcmc.or.kr/1388/04_notice/notice01.asp?id=Notice&wr_7=%C3%BB%BC%D2%B3%E2%BB%F3%B4%E3%BA%B9%C1%F6
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: idx
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 기장군청소년상담복지센터
+
+  - id: saha1388_notice
+    name: 사하구청소년상담복지센터 - 공지사항
+    org_type: 청소년
+    district: 사하구
+    collector: generic_board
+    url: https://saha1388.kr/bbs/board.php?bo_table=center_notice
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 표가 아닌 <li class="gw_tb_tr"> 목록 (그누보드)
+      row_selector: "li.gw_tb_tr"
+      title_selector: ".bo_tit"
+      date_selector: ".date"
+      key_param: wr_id
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 사하구청소년상담복지센터
+  - id: meetyou_notice
+    name: 수영구청소년상담복지센터 - 공지사항
+    org_type: 청소년
+    district: 수영구
+    collector: generic_board
+    url: http://meetyou.kr/community/notice/
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 제목 링크 javascript:goRead('636') → ?mode=read&dir=read&number=636
+      link_template: "http://meetyou.kr/community/notice/?mode=read&dir=read&number={0}"
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 수영구청소년상담복지센터
+  - id: yeongdo1388_notice
+    name: 영도구청소년상담복지센터 - 공지사항
+    org_type: 청소년
+    district: 영도구
+    collector: generic_board
+    # busanyouth.or.kr (청소년활동진흥센터 busanyouth.net 과 다른 곳)
+    url: http://www.busanyouth.or.kr/bbs/board.php?bo_table=notice
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 영도구청소년상담복지센터
+  - id: bsjin1388_notice
+    name: 부산진구청소년상담복지센터 - 공지사항
+    org_type: 청소년
+    district: 부산진구
+    collector: generic_board
+    url: https://www.bsjin1388.or.kr/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 부산진구청소년상담복지센터
+  - id: udream_notice
+    name: 해운대구청소년상담복지센터 - 공지사항
+    org_type: 청소년
+    district: 해운대구
+    collector: generic_board
+    # 공지 목록은 화면이 AJAX 로 불러오는 주소(mode=list_ok)를 바로 받는다
+    url: http://u-dream.or.kr/04/01.php?mode=list_ok&skind=&skey=&search=&page=1
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 제목 링크 onclick="view('270')" 은 GET 폼(mode=view, uid) 제출
+      link_template: "http://u-dream.or.kr/04/01.php?mode=view&uid={0}"
+      form_link: false
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 해운대구청소년상담복지센터
+  - id: yeonje1388_notice
+    name: 연제구청소년상담복지센터 - 공지사항
+    org_type: 청소년
+    district: 연제구
+    collector: generic_board
+    url: https://www.yeonje1388.or.kr/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 활동지도자, 멘토]
+      org_name: 연제구청소년상담복지센터
+
+  - id: bsdg1388_notice
+    name: 동구·동래구·사상구·중구 청소년상담복지센터 (bsdg1388.kr·1388youth.kr·sasang1388.kr·junggu1388.or.kr)
+    org_type: 청소년
+    district: 부산전체
+    collector: generic_board
+    url: http://bsdg1388.kr/
+    keyword_filter: true
+    phase: 3
+    enabled: false
+    verified: false
+    blocked: 네 곳 모두 첫 화면이 자바스크립트로 쿠키를 만든 뒤 다시 들어오게 하는 자동 접속 확인(cupid.js) 화면. 사이트가 자동 수집을 막는 장치라 우회하지 않음 (2026-09-29)
+
+  - id: flyseogu1388_notice
+    name: 서구청소년상담복지센터 (flyseogu1388.or.kr)
+    org_type: 청소년
+    district: 서구
+    collector: generic_board
+    url: http://www.flyseogu1388.or.kr/
+    keyword_filter: true
+    phase: 3
+    enabled: false
+    verified: false
+    blocked: 해외(GitHub 러너)에서 http 는 403 Forbidden, https 는 인증서 오류 (브라우저 User-Agent 로도 같음, 2026-09-29)
+
+  - id: geumnyeonsan_youth
+    name: 금련산청소년수련원 - 알림사항
+    org_type: 청소년
+    district: 수영구
+    collector: generic_board
+    url: https://www.busan.go.kr/youth/gnsaler01
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: curPage
+      org_name: 부산광역시 금련산청소년수련원
+
+  # 지역아동센터 (부산 200여 곳은 대부분 누리집이 없어 모음 게시판 두 곳으로 받는다)
+  - id: bro3c_hire
+    name: 지역아동센터 부산지원단 - 인재채용 (부산 지역아동센터·구청 아동복지교사 채용 모음)
+    org_type: 아동
+    district: 부산전체
+    collector: generic_board
+    url: https://www.bro3c.org/5_4
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 작성자 칸이 올린 기관(○○지역아동센터·○○구청)이라 기관명으로 쓴다
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 아동복지교사, 기초학습, 특기적성]  # 생활복지사·센터장·조리사 등 종사자 채용은 거름
+
+  - id: icare_busan_hire
+    name: 아동권리보장원 - 지역아동센터 구인게시판 (부산)
+    org_type: 아동
+    district: 부산전체
+    collector: generic_board
+    # 전국 게시판을 시도 '부산'으로 거른 목록 (GET 으로 됨)
+    url: https://www.icareinfo.go.kr/notice/jobOffer/jobOfferList.do?menuNo=3001110&searchCondition3=%EB%B6%80%EC%82%B0&pageIndex=1
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 제목 링크 fnDetail('17733') 은 POST 폼이지만 상세도 GET 으로 열림
+      link_template: "https://www.icareinfo.go.kr/notice/jobOffer/jobOfferDetail.do?bbs_no={0}&menuNo=3001110&bbs_section_cd=job"
+      form_link: false
+      row_must_contain: 부산
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 아동복지교사, 기초학습, 특기적성]  # 생활복지사·센터장·조리사 등 종사자 채용은 거름
+      org_name: 부산 지역아동센터
+
+  # 아동보호전문기관 (2026-10-04): 상담원·행정보조 채용이 대부분이고 아동학대 예방교육 강사 모집이 이따금 올라올 곳.
+  # 넣지 않은 곳: 부산광역시 아동보호종합센터(www.busan.go.kr/adong, 러너에서 시간 초과), 부산진구아동보호전문기관(bsjin1391.or.kr, 해외 접속 403),
+  # 부산남부아동보호전문기관(bnc1391.or.kr·nchild.wavework.kr 모두 DNS 없음)
+  - id: cpa_bukbusan_notice
+    name: 북부산(부산서부)아동보호전문기관 - 공지사항
+    org_type: 아동
+    district: 북구
+    collector: generic_board
+    url: https://busansb.gcps.or.kr/gnbusansb/board/cd103101100/default  # busansb.goodneighbors.kr 이 넘겨 주는 주소
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_pattern: "/info/(\\d+)"
+      org_name: 북부산아동보호전문기관
+      org_fixed: true  # 작성자 칸이 옛 이름 '부산서부아동보호전문기관' 인 글도 있음
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: cpa_dongbusan_notice
+    name: 동부산아동보호전문기관 - 알림마당
+    org_type: 아동
+    district: 해운대구
+    collector: generic_board
+    # https 는 인증서가 다른 주소 것이라(Hostname mismatch) http 주소로 받는다 (검증을 끄지 않음)
+    url: http://dbchild.saem.or.kr/community/notice-3/
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 워드프레스 게시판: <a href="javascript:goRead('230823')">, 목록에 날짜 칸이 없고 숨긴 본문 미리보기가 있음
+      # (미리보기 속 첨부파일 링크를 제목으로 고르지 않게 제목 칸을 짚음)
+      title_selector: td.pibs_nboard_subject a
+      link_template: "http://dbchild.saem.or.kr/community/notice-3/?lhwb_mode=view&board_id=9&list_id={0}"
+      key_param: list_id
+      org_name: 동부산아동보호전문기관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: cpa_jungbusan_notice
+    name: 중부산아동보호전문기관 - 알림마당
+    org_type: 아동
+    district: 부산전체
+    collector: generic_board
+    url: http://jbusan1391.or.kr/bbs/board.php?bo_table=notice  # https 인증서가 다른 주소 것이라 http
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      org_name: 중부산아동보호전문기관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # 육아종합지원센터 (2026-10-04): 부산시 센터(부산대 위탁, busan.childcare.go.kr)가 구·군 센터 채용 공고를 한 게시판에 모아 올리고,
+  # 구·군 센터는 공지사항에 부모교육·보육교직원 교육 강사진 모집을 이따금 올린다 (사상 2016~2020년 5건, 수영 2019~2023년 7건).
+  # 프로그램·휴관 안내와 시간제 대체교사·운영요원 채용이 대부분이라 강사 모집 글만. 어린이집 구인(보육교사)은 강사가 아니라 넣지 않음.
+  # 넣지 않은 곳: 연제구(yjscfc.or.kr, 자동 접속 확인 cupid.js), 해운대구(ecohud.or.kr, 공지 목록을 스크립트로 그림), 남구(시 센터 현황에 아직 없고 누리집을 찾지 못함, 채용은 시 센터 모음에 올라옴)·동구·중구(센터 없음)
+  - id: childcare_busan_notice
+    name: 부산육아종합지원센터 - 공지사항
+    org_type: 아동
+    district: 부산전체
+    collector: generic_board
+    url: https://busan.childcare.go.kr/ccef/community/notice/NoticeSlPL.jsp?BBSGB=47
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: BID  # <a href="NoticeSl.jsp?flag=Sl&BBSGB=47&BID=219052"> (목록 제목이 '...' 로 잘려 title 속성의 전체 제목)
+      org_name: 부산광역시육아종합지원센터
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: childcare_busan_gu_hire
+    name: 부산육아종합지원센터 - 구·군 센터 채용공고 (구·군 육아종합지원센터 채용 모음)
+    org_type: 아동
+    district: 부산전체
+    collector: generic_board
+    url: https://busan.childcare.go.kr/ccef/community/notice/NoticeSlPL.jsp?BBSGB=1233
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: BID
+      title_org_pattern: "^\\[([^\\]]+센터)\\]"  # '[영도구육아종합지원센터] 행정원 채용 공고'
+      org_name: 부산광역시육아종합지원센터
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: childcare_daycare_joboffer
+    name: 부산육아종합지원센터 - 인력뱅크 어린이집 구인 (부산 어린이집 채용 모음)
+    org_type: 아동
+    district: 부산전체
+    collector: generic_board
+    # 어린이집은 누리집이 거의 없고 채용 공고를 이 게시판에 올린다. 하루 20건 안팎이 대부분 보육교사·보조교사·조리원 채용
+    # (2026-10-05 에 올라 있던 290건 중 강사 글 0건) 이라 특별활동·프로그램 강사 글만 거른다
+    url: https://busan.childcare.go.kr/ccef/job/JobOfferSlPL.jsp?flag=SlPL&offset=0
+    pages: 3
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: offset
+      page_offset: 10
+      # 제목·어린이집명 칸 모두 fnGoBoardSl('2338462') 링크라 제목 칸을 짚는다. 상세는 GET 으로도 열림
+      title_selector: "td:nth-of-type(3) a"
+      org_selector: "td:nth-of-type(4) a"  # 칸 뒤의 '공공형' 표시는 뺌
+      district_selector: "td:nth-of-type(6)"  # '부산광역시 동래구'
+      link_template: "https://busan.childcare.go.kr/ccef/job/JobOfferSl.jsp?flag=Sl&JOSEQ={0}"
+      key_param: JOSEQ
+      include: [강사, 튜터, 코치, 지도자, 인력풀, 특별활동]
+
+  - id: childcare_sasang_notice
+    name: 사상구육아종합지원센터 - 공지사항
+    org_type: 아동
+    district: 사상구
+    collector: generic_board
+    url: https://www.sasangicare.kr/board/list.asp?BoardID=0001
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: sn
+      org_name: 사상구육아종합지원센터
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: childcare_suyeong_notice
+    name: 수영구육아종합지원센터 - 공지사항
+    org_type: 아동
+    district: 수영구
+    collector: generic_board
+    url: https://www.bsyscc.or.kr/new/board/list.asp?BoardID=0001
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: sn
+      org_name: 수영구육아종합지원센터
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: childcare_seogu_notice
+    name: 서구육아종합지원센터 - 공지사항
+    org_type: 아동
+    district: 서구
+    collector: generic_board
+    url: https://www.bsscc.or.kr/community/board_list.asp?BoardID=0003
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: sn
+      org_name: 서구육아종합지원센터
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: childcare_geumjeong_notice
+    name: 금정구육아종합지원센터 - 공지사항
+    org_type: 아동
+    district: 금정구
+    collector: generic_board
+    url: https://www.gjscc.or.kr/community/board_list.asp?BoardID=0004
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: sn
+      org_name: 금정구육아종합지원센터
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: childcare_saha_notice
+    name: 사하구육아종합지원센터 - 공지사항
+    org_type: 아동
+    district: 사하구
+    collector: generic_board
+    url: https://www.sahascc.or.kr/community/board_list.asp?BoardID=0004
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: sn
+      org_name: 사하구육아종합지원센터
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: childcare_yeongdo_notice
+    name: 영도구육아종합지원센터 - 공지사항
+    org_type: 아동
+    district: 영도구
+    collector: generic_board
+    url: https://www.ydgscc.or.kr/community/board_list.asp?BoardID=0003
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: sn
+      org_name: 영도구육아종합지원센터
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: childcare_gijang_notice
+    name: 기장군육아종합지원센터 - 공지사항
+    org_type: 아동
+    district: 기장군
+    collector: generic_board
+    url: https://gijangchild.or.kr/board/list.asp?BoardID=0001
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: sn
+      encoding: cp949  # charset=euc-kr 이라 적고 응답 머리글에는 문자셋이 없음
+      org_name: 기장군육아종합지원센터
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: childcare_busanjin_notice
+    name: 부산진구육아종합지원센터 - 공지사항
+    org_type: 아동
+    district: 부산진구
+    collector: generic_board
+    url: https://www.bjscfc.or.kr/board/list.asp?BoardID=0001
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: sn
+      encoding: cp949  # charset=euc-kr 이라 적고 응답 머리글에는 문자셋이 없음
+      org_name: 부산진구육아종합지원센터
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: childcare_bukgu_notice
+    name: 북구육아종합지원센터 - 공지사항
+    org_type: 아동
+    district: 북구
+    collector: generic_board
+    url: https://www.bbgscc.or.kr/board/list.asp?BoardID=0001
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: sn
+      encoding: cp949
+      org_name: 북구육아종합지원센터
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: childcare_dongnae_notice
+    name: 동래구육아종합지원센터 - 공지사항
+    org_type: 아동
+    district: 동래구
+    collector: generic_board
+    url: https://www.bdscc.or.kr/board/list.asp?BoardID=0003
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: sn
+      org_name: 동래구육아종합지원센터
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # 장난감도서관 (2026-10-05, 복지뱅크 '장난감도서관' 부산 29곳): 대부분 육아종합지원센터·종합사회복지관이 운영해서 그 공지 게시판으로 받는다.
+  # 따로 게시판이 있는 곳은 동래구육아종합지원센터 맘쓰허그 장난감도서관뿐. 부산시 센터의 그린나래 장난감도서관(bcsc.kr)은 해외 접속 403,
+  # 강서구·사하구(감천·하단 공동육아나눔터)·반송 베베하우스는 네이버·다음 카페, 해운대 희망장난감도서관은 www.haeundae.go.kr DNS 실패
+  - id: toy_dongnae_momshug_notice
+    name: 동래구 맘쓰허그 장난감도서관 - 공지사항
+    org_type: 아동
+    district: 동래구
+    collector: generic_board
+    url: https://www.bdscc.or.kr/toy/board/list.asp?BoardID=0011
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: sn
+      org_name: 동래구 맘쓰허그 장난감도서관
+      org_fixed: true  # 작성자 칸이 '동래구육아종합지원센터'
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: childcare_gangseo_notice
+    name: 강서구육아종합지원센터 - 공지사항
+    org_type: 아동
+    district: 강서구
+    collector: generic_board
+    url: https://www.bgscc.or.kr/board/list.asp?BoardID=0001
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: sn
+      org_name: 강서구육아종합지원센터
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # 복지관 (사회·노인·장애인복지관 90여 곳 → 협회·협의회의 채용 모음 게시판으로 받는다)
+  - id: baswc_hire
+    name: 부산시사회복지관협회 - 구인게시판 (종합사회복지관 54곳 채용 모음)
+    org_type: 복지관
+    district: 부산전체
+    collector: generic_board
+    url: https://www.baswc.org/SW_bbs/notice/list.php?zipEncode==ixzRj3B391vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 작성자 칸이 올린 복지관이라 기관명으로 쓴다
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]  # 사회복지사·요양보호사·조리원 등 종사자 채용은 거름 ('늘봄실버요양센터' 때문에 늘봄은 뺌)
+
+  - id: bswin_job
+    name: 부산광역시사회복지협의회 - 취업정보 (복지관·요양·아동 시설 채용 모음)
+    org_type: 복지관
+    district: 부산전체
+    collector: generic_board
+    url: https://bswin.net/information_job
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 아임웹 게시판: <ul class="li_body"> 한 줄에 분류·제목·작성자·날짜. 날짜 칸 글자는 '2일전', title 속성에 날짜
+      row_selector: "div.li_board ul.li_body"
+      title_selector: "a.list_text_title"
+      date_selector: "li.time@title"
+      key_param: idx
+      title_org_pattern: '^\[([^\]]+)\]'  # 제목 앞 [기관명]
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]  # 사회복지사·요양보호사·조리원 등 종사자 채용은 거름 ('늘봄실버요양센터' 때문에 늘봄은 뺌)
+
+  # 종합사회복지관 55곳 (부산시사회복지관협회 회원기관 목록의 누리집). 협회 구인게시판에 안 올리고 자기 누리집에만 올리는
+  # 프로그램 강사 모집('웰빙댄스 강사', '웃음치료 강사', '스마트폰 교육 강사')이 있어 공지·채용 게시판을 함께 받는다.
+  # 작성자 칸은 '관리자'·'복지관 관리자' 같은 계정이라 기관명은 복지관 이름으로 고정(org_fixed)
+  # SW_bbs: 표 목록(기본)과 <li> 목록형(li:has(> div.info)) 두 가지. zipEncode 값은 누리집 메뉴 링크 그대로
+  # 넣지 않은 곳: 동래·몰운대·연산(자동 접속 확인 cupid.js, 우회하지 않음), 금곡·백양·다대·두송·반송·성지(해외 접속 403),
+  #   동구·부산종합(수영)(접속한 쪽 IP 로 되돌려 보냄), 부산기독교(연결을 끊음), 화정(목록이 빈 응답), 남구(네이버 블로그만)
+
+  - id: cw_gangseo_notice
+    name: 강서구종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 강서구
+    collector: generic_board
+    url: https://www.gangseosw.or.kr/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      row_selector: "li:has(> div.info)"
+      title_selector: "p.txt1 a"
+      date_selector: "p.txt2"
+      org_name: 강서구종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_gangseo_hire
+    name: 강서구종합사회복지관 - 인재채용
+    org_type: 복지관
+    district: 강서구
+    collector: generic_board
+    url: https://www.gangseosw.or.kr/SW_bbs/notice/list.php?zipEncode=ZDxzU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      row_selector: "li:has(> div.info)"
+      title_selector: "p.txt1 a"
+      date_selector: "p.txt2"
+      org_name: 강서구종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  # 목록을 자바스크립트로 불러오는 게시판: 첫 화면(/06/01.php)은 빈 틀이고 mode=list_ok 주소가 목록. 글은 view('번호') → mode=view&uid=
+  - id: cw_nakdong_notice
+    name: 낙동종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 강서구
+    collector: generic_board
+    url: https://www.ndswc.or.kr/06/01.php?mode=list_ok&skind=&skey=&search=&page=1
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://www.ndswc.or.kr/06/01.php?mode=view&uid={0}"
+      key_param: uid
+      org_name: 낙동종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_geumjeong_notice
+    name: 금정종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 금정구
+    collector: generic_board
+    url: https://www.kumjungswc.or.kr/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 금정종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_namgwang_notice
+    name: 남광종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 금정구
+    collector: generic_board
+    url: https://www.nk.or.kr/SW_bbs/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 남광종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_gamman_notice
+    name: 감만종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 남구
+    collector: generic_board
+    url: http://www.gamman.or.kr/05_Community/01_impartation.php
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: idx
+      org_name: 감만종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_yongho_notice
+    name: 용호종합사회복지관 - 공고/모집 안내
+    org_type: 복지관
+    district: 남구
+    collector: generic_board
+    url: https://www.yongho.or.kr/SW_bbs/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 용호종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_chorogusan_notice
+    name: 초록우산 부산종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 동구
+    collector: generic_board
+    url: https://www.chorogusan-busan.or.kr/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      row_selector: "li:has(> div.info)"
+      title_selector: "p.txt1 a"
+      date_selector: "p.txt2"
+      org_name: 초록우산 부산종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  # '=etpLrxydr…u2yPr3BU' 메뉴는 채용 글이 빠진 공지라 채용까지 나오는 '=u2yPr3BU' 를 받는다
+  - id: cw_sajik_notice
+    name: 사직종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 동래구
+    collector: generic_board
+    url: https://www.sjcwc.org/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 사직종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_busanjin_notice
+    name: 부산진구종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 부산진구
+    collector: generic_board
+    url: http://www.yjingu.or.kr/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 부산진구종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  # 두 공지 메뉴 중 채용 글까지 나오는 쪽
+  - id: cw_gaegeum_notice
+    name: 개금종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 부산진구
+    collector: generic_board
+    url: https://anguk.gaegeum.org/SW_bbs/notice/list.php?zipEncode===azUv3BZ91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 개금종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_danggam_notice
+    name: 당감종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 부산진구
+    collector: generic_board
+    url: https://www.danggam.or.kr/notice
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 당감종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_danggam_hire
+    name: 당감종합사회복지관 - 채용정보
+    org_type: 복지관
+    district: 부산진구
+    collector: generic_board
+    url: https://www.danggam.or.kr/recruit
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 당감종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_jeonpo_notice
+    name: 전포종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 부산진구
+    collector: generic_board
+    url: https://www.jpswc.or.kr/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 전포종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_jangseon_notice
+    name: 장선종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 북구
+    collector: generic_board
+    url: https://www.jsswc.or.kr/html/index.php?pageNum=002001000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: number
+      org_name: 장선종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  # '교육문화사업-강사 채용 공고(웰빙댄스)' 처럼 프로그램 강사 채용이 자주 올라옴.
+  # www.jsswc.or.kr 은 2026-10-02 러너 네 번 중 두 번만 열림 (나머지는 접속 시간 초과)
+  - id: cw_jangseon_hire
+    name: 장선종합사회복지관 - 채용공고
+    org_type: 복지관
+    district: 북구
+    collector: generic_board
+    url: https://www.jsswc.or.kr/html/index.php?pageNum=002012000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: number
+      org_name: 장선종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_deokcheon_notice
+    name: 덕천종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 북구
+    collector: generic_board
+    url: http://www.duc1000.co.kr/notice
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 덕천종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_gongchang_notice
+    name: 공창종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 북구
+    collector: generic_board
+    url: http://www.gongchang.or.kr/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      row_selector: "li:has(> div.info)"
+      title_selector: "p.txt1 a"
+      date_selector: "p.txt2"
+      org_name: 공창종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_dongwon_notice
+    name: 동원종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 북구
+    collector: generic_board
+    url: http://www.ymcadw.org/03_dongwon/list.asp?data_id=0
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: number
+      org_name: 동원종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_namsanjeong_notice
+    name: 남산정종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 북구
+    collector: generic_board
+    url: https://www.nsjswc.co.kr/bbs/sub4_1
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: idx
+      org_name: 남산정종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_hwamyeong_notice
+    name: 화명종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 북구
+    collector: generic_board
+    url: http://www.hmswc2233.or.kr/notice
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 화명종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_hwamyeong_hire
+    name: 화명종합사회복지관 - 예결산/채용/입찰공고
+    org_type: 복지관
+    district: 북구
+    collector: generic_board
+    url: http://www.hmswc2233.or.kr/bulletin
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 화명종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  # 워드프레스 KBoard (?mod=document&uid=글번호)
+  - id: cw_mandeok_notice
+    name: 만덕종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 북구
+    collector: generic_board
+    url: https://mandeok07.org/%EC%B0%B8%EC%97%AC%EB%A7%88%EB%8B%B9/%EA%B3%B5%EC%A7%80%EC%82%AC%ED%95%AD/
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: uid
+      org_name: 만덕종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_mandeok_hire
+    name: 만덕종합사회복지관 - 채용 공고
+    org_type: 복지관
+    district: 북구
+    collector: generic_board
+    url: https://mandeok07.org/%EC%B0%B8%EC%97%AC%EB%A7%88%EB%8B%B9/%EC%B1%84%EC%9A%A9-%EA%B3%B5%EA%B3%A0/
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: uid
+      org_name: 만덕종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_mora_notice
+    name: 모라종합사회복지관 - 공고/모집안내
+    org_type: 복지관
+    district: 사상구
+    collector: generic_board
+    url: https://www.moraswc.or.kr/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 모라종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_sasang_notice
+    name: 사상구종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 사상구
+    collector: generic_board
+    url: https://www.swc.or.kr/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 사상구종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_hakjang_notice
+    name: 학장종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 사상구
+    collector: generic_board
+    url: http://www.hakjang.or.kr/SW_bbs/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 학장종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_hakjang_hire
+    name: 학장종합사회복지관 - 채용/모집
+    org_type: 복지관
+    district: 사상구
+    collector: generic_board
+    url: http://www.hakjang.or.kr/SW_bbs/list.php?zipEncode==i2BQ91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 학장종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  # 낙동과 같은 게시판 프로그램 (mode=list_ok 목록, view('번호'))
+  - id: cw_saha_notice
+    name: 사하구종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 사하구
+    collector: generic_board
+    url: https://www.sahabokji.or.kr/05/01.php?mode=list_ok&skind=&skey=&search=&page=1
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://www.sahabokji.or.kr/05/01.php?mode=view&uid={0}"
+      key_param: uid
+      org_name: 사하구종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_gupyung_notice
+    name: 구평종합사회복지관 - 구평알림이
+    org_type: 복지관
+    district: 사하구
+    collector: generic_board
+    url: https://www.gupyung.or.kr/bbs/board.php?bo_table=news
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      org_name: 구평종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_seogu_notice
+    name: 서구종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 서구
+    collector: generic_board
+    url: https://www.pseogu.or.kr/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 서구종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_holtsy_notice
+    name: 홀트수영종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 수영구
+    collector: generic_board
+    url: https://www.holtsy.or.kr/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      row_selector: "li:has(> div.info)"
+      title_selector: "p.txt1 a"
+      date_selector: "p.txt2"
+      org_name: 홀트수영종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_holtsy_hire
+    name: 홀트수영종합사회복지관 - 채용정보
+    org_type: 복지관
+    district: 수영구
+    collector: generic_board
+    url: https://www.holtsy.or.kr/SW_bbs/notice/list.php?zipEncode==i2BQ91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      row_selector: "li:has(> div.info)"
+      title_selector: "p.txt1 a"
+      date_selector: "p.txt2"
+      org_name: 홀트수영종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_yeongdo_notice
+    name: 영도구종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 영도구
+    collector: generic_board
+    url: http://www.youngdogu.or.kr/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      row_selector: "li:has(> div.info)"
+      title_selector: "p.txt1 a"
+      date_selector: "p.txt2"
+      org_name: 영도구종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_yeongdo_hire
+    name: 영도구종합사회복지관 - 예결산/채용/입찰공고
+    org_type: 복지관
+    district: 영도구
+    collector: generic_board
+    url: http://www.youngdogu.or.kr/SW_bbs/notice/list.php?zipEncode==0MCVzMBP91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      row_selector: "li:has(> div.info)"
+      title_selector: "p.txt1 a"
+      date_selector: "p.txt2"
+      org_name: 영도구종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_dongsam_notice
+    name: 동삼종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 영도구
+    collector: generic_board
+    url: https://www.dscwc.or.kr/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 동삼종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_jeolyeong_notice
+    name: 절영종합사회복지관 - 절영소식
+    org_type: 복지관
+    district: 영도구
+    collector: generic_board
+    url: https://www.jy.or.kr/SW_bbs/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 절영종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_sangli_notice
+    name: 상리종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 영도구
+    collector: generic_board
+    url: https://www.sangli.org/bbs/board.php?bo_table=notice
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      org_name: 상리종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  # 행이 <td> 가 아니라 <th class="board_title"> 등으로 된 표 (공지·인재채용이 함께 나옴)
+  - id: cw_wachi_notice
+    name: 와치종합사회복지관 - 공지사항 및 소식
+    org_type: 복지관
+    district: 영도구
+    collector: generic_board
+    url: https://www.wachi.or.kr/SW_bbs/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      row_selector: "tr:has(> th.board_title a)"
+      title_selector: "th.board_title a"
+      date_selector: "th.board_date"
+      org_name: 와치종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_junggu_notice
+    name: 중구종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 중구
+    collector: generic_board
+    url: http://www.jungbok.or.kr/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      row_selector: "li:has(> div.info)"
+      title_selector: "p.txt1 a"
+      date_selector: "p.txt2"
+      org_name: 중구종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_yeongjin_notice
+    name: 영진종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 해운대구
+    collector: generic_board
+    url: https://www.yjswc.or.kr/renewal/toktok/toktok01.php
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: idx
+      org_name: 영진종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  # 모집이 끝나면 제목 앞에 '(완료)' 를 붙임 (keywords.yaml 결과공고)
+  - id: cw_yeongjin_hire
+    name: 영진종합사회복지관 - 채용정보
+    org_type: 복지관
+    district: 해운대구
+    collector: generic_board
+    url: https://www.yjswc.or.kr/renewal/toktok/toktok05.php
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: idx
+      org_name: 영진종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  # 목록 행 태그가 <tr> 가 아니라 <trf> 이고 닫히지 않아 행이 겹쳐 읽힌다 → 행 바로 아래 칸만 본다
+  - id: cw_haeundae_notice
+    name: 해운대종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 해운대구
+    collector: generic_board
+    url: http://haeundae.saem.or.kr/community/news1.php
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      row_selector: trf
+      title_selector: ":scope > td.title a"
+      date_selector: ":scope > td:nth-of-type(4)"
+      key_param: number
+      org_name: 해운대종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_unbong_notice
+    name: 운봉종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 해운대구
+    collector: generic_board
+    url: https://www.woon-bong.or.kr/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 운봉종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  # '통합돌봄사업 돌봄건강교실 강사 공개 모집' 등이 올라옴
+  - id: cw_unbong_hire
+    name: 운봉종합사회복지관 - 직원채용
+    org_type: 복지관
+    district: 해운대구
+    collector: generic_board
+    url: https://www.woon-bong.or.kr/SW_bbs/notice/list.php?zipEncode==i2BQ91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 운봉종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_banseok_notice
+    name: 반석종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 해운대구
+    collector: generic_board
+    url: http://www.banseok1995.or.kr/SW_bbs/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 반석종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_parangsae_notice
+    name: 파랑새종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 해운대구
+    collector: generic_board
+    url: http://www.sungsil.or.kr/bbs/board.php?bo_table=notice
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      org_name: 파랑새종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_parangsae_hire
+    name: 파랑새종합사회복지관 - 채용공고
+    org_type: 복지관
+    district: 해운대구
+    collector: generic_board
+    url: http://www.sungsil.or.kr/bbs/board.php?bo_table=reqruit
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      org_name: 파랑새종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  # 그누보드인데 utf-8 이라고 적고 EUC-KR 로 보냄 → encoding
+  - id: cw_banyeo_notice
+    name: 반여종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 해운대구
+    collector: generic_board
+    url: https://www.ebanyeo.com/bbs/board.php?bo_table=notice
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      encoding: cp949
+      date_selector: "td.datetime"  # '09-29'
+      key_param: wr_id
+      org_name: 반여종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  # 기장군도시관리공단이 운영 (기장청소년센터와 같은 공단 누리집 게시판, EUC-KR). 직원 채용은 공단 채용정보(gijangcmc_hire)로 받음
+  - id: cw_gijang_notice
+    name: 기장종합사회복지관 - 새소식
+    org_type: 복지관
+    district: 기장군
+    collector: generic_board
+    url: https://www.gijangcmc.or.kr/welfare/01_info/01_info.asp?id=Notice&wr_7=%C1%BE%C7%D5%BB%E7%C8%B8%BA%B9%C1%F6%B0%FC
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: idx
+      org_name: 기장종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_dahaengbok_notice
+    name: 다행복한종합사회복지관 - 새소식
+    org_type: 복지관
+    district: 기장군
+    collector: generic_board
+    url: https://www.gijangcmc.or.kr/happycenter/04_community/01_community.asp?id=Notice&wr_7=%B4%D9%C7%E0%BA%B9%C7%D1%C1%BE%C7%D5%BB%E7%C8%B8%BA%B9%C1%F6%B0%FC
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: idx
+      org_name: 다행복한종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  - id: cw_geoje_notice
+    name: 연제구거제종합사회복지관 - 공지사항
+    org_type: 복지관
+    district: 연제구
+    collector: generic_board
+    url: https://www.bgjswc.or.kr/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 연제구거제종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  # '한국무용 프로그램 강사 모집' 등이 올라옴
+  - id: cw_geoje_hire
+    name: 연제구거제종합사회복지관 - 채용공고
+    org_type: 복지관
+    district: 연제구
+    collector: generic_board
+    url: https://www.bgjswc.or.kr/SW_bbs/notice/list.php?zipEncode==i2BQ91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 연제구거제종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+
+  # 노인복지관 (부산시 '노인복지관 현황'의 누리집 25곳 중 게시판을 받을 수 있는 곳). 노년사회화교육·평생교육 프로그램 강사 채용이 올라온다
+  - id: senior_busanjin_hire
+    name: 부산진구노인복지관 - 채용공고
+    org_type: 복지관
+    district: 부산진구
+    collector: generic_board
+    url: https://www.chambokji.org/SW_bbs/notice/list.php?zipEncode==i2BQ91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 부산진구노인복지관
+
+  - id: senior_city_recruit
+    name: 부산광역시노인종합복지관 - 인재채용
+    org_type: 복지관
+    district: 부산전체
+    collector: generic_board
+    url: http://www.youngsilver.or.kr/bbs/board.php?bo_table=recruit
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 부산광역시노인종합복지관
+
+  - id: senior_city_notice
+    name: 부산광역시노인종합복지관 - 공지사항
+    org_type: 복지관
+    district: 부산전체
+    collector: generic_board
+    url: http://www.youngsilver.or.kr/bbs/board.php?bo_table=notice
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 부산광역시노인종합복지관
+
+  - id: senior_dasarang_notice
+    name: 다사랑복합문화예술회관(노인복지관) - 공지사항
+    org_type: 복지관
+    district: 부산전체
+    collector: generic_board
+    # 한글 도메인 다사랑시니어.org
+    url: http://www.xn--9i1b2b12rnnlbwc3yf.org/board/bbs/board.php?bo_table=notice
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 다사랑복합문화예술회관
+
+  - id: senior_gangseo_notice
+    name: 강서노인종합복지관 - 공지사항
+    org_type: 복지관
+    district: 강서구
+    collector: generic_board
+    url: http://www.senior1004.co.kr/community1.html
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: "no"
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 강서노인종합복지관
+
+  - id: senior_geumjeong_notice
+    name: 금정구노인복지관 - 공지사항
+    org_type: 복지관
+    district: 금정구
+    collector: generic_board
+    url: https://www.geumjeongsilver.kr/SW_bbs/notice/list.php?zipEncode==etpLrxydrMCH9MyMu2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 금정구노인복지관
+
+  - id: senior_gwangan_notice
+    name: 광안노인복지관 - 공지사항
+    org_type: 복지관
+    district: 수영구
+    collector: generic_board
+    url: https://www.gasenior.org/SW_bbs/notice/list.php?zipEncode==etpLrxydrMCH9MyMu2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 광안노인복지관
+
+  - id: senior_dongnae_notice
+    name: 동래구노인복지관 - 공지사항
+    org_type: 복지관
+    district: 동래구
+    collector: generic_board
+    # 시청 현황의 옛 주소는 도메인이 만료됐고 새 누리집(dnswc.or.kr)으로 옮김. '노인맞춤돌봄서비스 강사 채용' 이 올라옴
+    url: https://www.dnswc.or.kr/SW_bbs/notice/list.php?zipEncode==etpLrxydrMCH9MyMu2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 동래구노인복지관
+
+  - id: senior_jasungdae_notice
+    name: 자성대노인종합복지관 - 공지사항
+    org_type: 복지관
+    district: 동구
+    collector: generic_board
+    url: http://jasungdae.or.kr/sub5_1.html
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: "no"
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 자성대노인종합복지관
+
+  - id: senior_junggu_notice
+    name: 중구노인복지관 - 공지사항
+    org_type: 복지관
+    district: 중구
+    collector: generic_board
+    # SW_bbs 의 <li> 목록형 (표가 아님). 날짜는 txt2 칸에 '작성자 | 26.09.08 | 조회'
+    url: http://www.junggusilver.or.kr/SW_bbs/notice/list.php?zipEncode==etpLrxydrMCH9MyMu2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      row_selector: "li:has(> div.info)"
+      title_selector: "p.txt1 a"
+      date_selector: "p.txt2"
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 중구노인복지관
+
+  - id: senior_munhyeon_notice
+    name: 문현노인복지관 - 알림마당
+    org_type: 복지관
+    district: 남구
+    collector: generic_board
+    url: http://moon9988.or.kr/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 문현노인복지관
+
+  - id: senior_myeongji_recruit
+    name: 명지노인종합복지관 - 채용공고 (가덕도동노인복지관 포함)
+    org_type: 복지관
+    district: 강서구
+    collector: generic_board
+    url: http://mjnoin.ai-sw.net/bbs/board.php?bo_table=reqruit
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 명지노인종합복지관
+
+  - id: senior_ojin_recruit
+    name: 어진샘노인종합복지관 - 채용
+    org_type: 복지관
+    district: 부산전체
+    collector: generic_board
+    # 워드프레스 게시판, 제목 링크 goRead('번호'). 목록에 날짜 칸이 없음
+    url: http://ojin.saem.or.kr/community/guest/
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "http://ojin.saem.or.kr/community/guest/?mode=read&dir=read&number={0}"
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 어진샘노인종합복지관
+
+  - id: senior_sasang_hire
+    name: 사상구노인복지관 - 인사채용 (주간보호센터)
+    org_type: 복지관
+    district: 사상구
+    collector: generic_board
+    url: http://www.sasang-senior.or.kr/SW_bbs/notice/list.php?zipEncode=Xi2BQ91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 사상구노인복지관
+
+  - id: senior_sasang_branch_hire
+    name: 사상구노인복지관 분관 - 인사채용
+    org_type: 복지관
+    district: 사상구
+    collector: generic_board
+    # 분관 '토요요가' 강사 채용 등
+    url: http://www.sasang-senior.or.kr/SW_bbs/notice/list.php?zipEncode=Yi2BQ91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 사상구노인복지관 분관
+
+  - id: senior_silverbell_hire
+    name: 실버벨노인종합복지관 - 채용공고
+    org_type: 복지관
+    district: 부산전체
+    collector: generic_board
+    # 한글 도메인 실버벨.kr
+    url: http://www.xn--hk3bqct1u.kr/html/index.php?pageNum=005002000
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: number
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 실버벨노인종합복지관
+
+  - id: senior_suyeong_hire
+    name: 수영구노인복지관 - 채용공고
+    org_type: 복지관
+    district: 수영구
+    collector: generic_board
+    url: https://6070.bulgukto.or.kr/SW_bbs/notice/list.php?zipEncode==i2BQ91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 수영구노인복지관
+
+  - id: senior_yeongdo_notice
+    name: 영도구노인복지관 - 공지사항
+    org_type: 복지관
+    district: 영도구
+    collector: generic_board
+    # SW_bbs 의 <li> 목록형. '[인사/…]' 머리말로 채용이 올라옴
+    url: http://www.youngdosenior.or.kr/SW_bbs/notice/list.php?zipEncode==etpLrxydrMCH9MyMu2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      row_selector: "li:has(> div.info)"
+      title_selector: "p.txt1 a"
+      date_selector: "p.txt2"
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 영도구노인복지관
+
+  - id: senior_yeonje_notice
+    name: 연제구노인복지관 - 공지사항
+    org_type: 복지관
+    district: 연제구
+    collector: generic_board
+    # 글 주소 /board/notice/detail/글번호/page/쪽 → 글번호만 식별값으로
+    # 러너에 따라 접속 시간 초과가 잦음 (2026-09-30 세 번 중 한 번 성공). 안 된 날은 catch-up 에서 다시 받음
+    url: http://www.yjsilver.com/board/notice/lists
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_pattern: "detail/(\\d+)"
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 연제구노인복지관
+
+  - id: senior_seogu_notice
+    name: 서구노인복지관 - 공지사항
+    org_type: 복지관
+    district: 서구
+    collector: generic_board
+    # EUC-KR ASP 게시판
+    url: https://www.bssgsenior.or.kr/sub_menu5/list.asp?board_idx=D85311AC6B3572390A958C8A62F9AB88D2C076CD31C20209F1632906D4733356&s_gubun=b
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: idx
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 서구노인복지관
+
+  - id: senior_namgu_hire
+    name: 남구노인복지관 - 채용공고
+    org_type: 복지관
+    district: 남구
+    collector: generic_board
+    url: http://www.ngswc.or.kr/04_notice/notice05.php
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: idx
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 남구노인복지관
+
+  - id: senior_bumin_notice
+    name: 부민노인복지관 - 공지사항
+    org_type: 복지관
+    district: 서구
+    collector: generic_board
+    url: https://www.bmsenior.org/SW_bbs/notice/list.php?zipEncode==etpLrxydrMCH9MyMu2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 부민노인복지관
+
+  - id: senior_saha_notice
+    name: 사하사랑채노인복지관 - 공지사항 (신평사랑채 포함)
+    org_type: 복지관
+    district: 사하구
+    collector: generic_board
+    # 해운대구청소년상담복지센터와 같은 제작사: 목록은 AJAX 주소(mode=list_ok), 제목 링크 view('번호')
+    url: https://sahasilver.org/07/01.php?mode=list_ok&skind=&skey=&search=&page=1
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://sahasilver.org/07/01.php?mode=view&uid={0}"
+      form_link: false
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 사하사랑채노인복지관
+
+  # 장애인복지관 (부산시 현황 17곳 중 누리집 게시판을 받을 수 있는 곳)
+  - id: rehab_hire
+    name: 부산장애인종합복지관 - 채용게시판
+    org_type: 복지관
+    district: 연제구
+    collector: generic_board
+    url: https://www.rehabcenter.or.kr/SW_bbs/notice/list.php?zipEncode==i2BQ91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 부산장애인종합복지관
+
+  - id: bgrc_hire
+    name: 북구장애인종합복지관 - 채용게시판
+    org_type: 복지관
+    district: 북구
+    collector: generic_board
+    # 오래된 TLS 설정(짧은 DH 키)이라 legacy_tls
+    url: https://bgrc.or.kr/community_05.html
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      legacy_tls: true
+      # 표가 아닌 <li class="list_body"> 안의 div 칸들 (번호·제목·작성자·날짜·조회)
+      row_selector: "li.list_body"
+      title_selector: "div.list_td_style01 a"
+      date_selector: ":scope > div:nth-of-type(4)"
+      key_param: bid
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 북구장애인종합복지관
+
+  - id: dnrc_notice
+    name: 동래구장애인복지관 - 공지사항
+    org_type: 복지관
+    district: 동래구
+    collector: generic_board
+    url: https://dnrc.kr/notice
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 동래구장애인복지관
+
+  - id: busancp_notice
+    name: 부산뇌병변복지관 - 공지사항
+    org_type: 복지관
+    district: 북구
+    collector: generic_board
+    # 워드프레스, 한글 주소
+    url: http://busancp.or.kr/복지관-소식/공지사항/
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 부산뇌병변복지관
+
+  # 부산시 '장애인 지역사회재활시설' 현황의 장애인복지관 17곳 가운데 위 4곳 말고 누리집을 받을 수 있는 곳 (2026-10-03).
+  # 강사 채용(예비학교 프로그램 전담 강사·바우처강사·정보화강사 등)은 대부분 '채용안내' 게시판에, 공지사항은 참여자 모집·예산 공고라 채용 게시판을 받는다
+  - id: dis_sigak_notice
+    name: 부산시각장애인복지관 - 공지사항
+    org_type: 복지관
+    district: 북구
+    collector: generic_board
+    url: https://www.newwhite.or.kr/boardList.do?BNUM=201512011&leftMenuNum=1&parentMenuNum=3&reqPage=1
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 채용 공고도 공지사항에 올림. 제목 링크 boardViewDo1(게시판, 글번호, …) → GET 폼(/boardView.do).
+      # 폼의 숨은 값 leftMenuTitle·BTYPE 이 빠지면 500 오류라 함께 붙인다
+      link_template: "https://www.newwhite.or.kr/boardView.do?BNUM={0}&SEQ={1}&leftMenuNum=1&leftMenuTitle=%EB%B3%B5%EC%A7%80%EA%B4%80%EC%86%8C%EC%8B%9D&parentMenuNum=3&BTYPE=&reqPage=1&imgNum=1"
+      key_param: SEQ
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 부산시각장애인복지관
+      org_fixed: true  # 작성자 칸이 '기획운영지원팀' 같은 부서
+
+  - id: dis_seogu_hire
+    name: 서구장애인복지관 - 채용공고
+    org_type: 복지관
+    district: 서구
+    collector: generic_board
+    url: http://www.seogurc.or.kr/bbs/board.php?bo_table=sub04_08&me_code=4090
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: wr_id
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 서구장애인복지관
+
+  - id: dis_yeongdo_hire
+    name: 영도구장애인복지관 - 채용공고
+    org_type: 복지관
+    district: 영도구
+    collector: generic_board
+    url: https://www.yeongdorc.or.kr/SW_bbs/list.php?zipEncode==i2BQ91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 영도구장애인복지관
+
+  - id: dis_busanjin_hire
+    name: 부산진구장애인복지관 - 채용안내
+    org_type: 복지관
+    district: 부산진구
+    collector: generic_board
+    # 부산진구노인·장애인복지관의 장애인 쪽 누리집 (노인복지관 www.chambokji.org 와 따로)
+    url: https://bokji.chambokji.org/SW_bbs/notice/list.php?zipEncode==i2BQ91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 부산진구장애인복지관
+
+  - id: dis_namgu_notice
+    name: 남구장애인복지관 - 공지사항
+    org_type: 복지관
+    district: 남구
+    collector: generic_board
+    url: http://www.namgurc.or.kr/SW_bbs/list.php?zipEncode==etpLrxydrMCH9MyMu2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 머리글 줄 없는 표 (채용 게시판이 따로 없어 공지사항)
+      row_selector: "tr:has(> td.board_title a)"
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 남구장애인복지관
+      org_fixed: true  # 작성자 칸이 '남구장복'
+
+  - id: dis_nasaham_hire
+    name: 나사함발달장애인복지관 - 채용안내
+    org_type: 복지관
+    district: 남구
+    collector: generic_board
+    url: https://www.nasaham.or.kr/SW_bbs/notice/list.php?zipEncode=LTwy091vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      row_selector: "li:has(> div.info):not(:has(.notice_txt))"  # 위에 한 번 더 나오는 고정글(주소가 달라 같은 글로 못 묶음)은 뺌
+      title_selector: "p.txt1 a"
+      date_selector: "p.txt2"
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 나사함발달장애인복지관
+      org_fixed: true
+
+  - id: dis_saha_hire
+    name: 사하구장애인종합복지관 - 채용안내
+    org_type: 복지관
+    district: 사하구
+    collector: generic_board
+    url: http://saharc.or.kr/board_recruit01/list.php?tn=board_recruit01&G_state=Y
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: uid
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 사하구장애인종합복지관
+
+  - id: dis_geumjeong_hire
+    name: 금정구장애인복지관 - 채용안내
+    org_type: 복지관
+    district: 금정구
+    collector: generic_board
+    url: https://www.gjrc.or.kr/SW_bbs/list.php?zipEncode==i2BQ91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 금정구장애인복지관
+      org_fixed: true  # 작성자 칸에 '예비학교' 같은 사업 이름
+
+  - id: dis_gijang_hire
+    name: 기장장애인복지관 - 채용안내
+    org_type: 복지관
+    district: 기장군
+    collector: generic_board
+    url: https://www.gijangbok.or.kr/SW_bbs/notice/list.php?zipEncode==i2BQ91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      row_selector: "li:has(> div.info):not(:has(.notice_txt))"  # 위에 한 번 더 나오는 고정글(주소가 달라 같은 글로 못 묶음)은 뺌
+      title_selector: "p.txt1 a"
+      date_selector: "p.txt2"
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 기장장애인복지관
+      org_fixed: true
+
+  - id: dis_sasang_notice
+    name: 사상구장애인복지관 - 공지사항
+    org_type: 복지관
+    district: 사상구
+    collector: generic_board
+    # 사하구장애인종합복지관과 같은 게시판 프로그램. 채용 공고도 공지사항에 올림
+    url: http://www.sasangrc.or.kr/board_notice01/list.php?tn=board_notice01&G_state=Y
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: uid
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후]
+      org_name: 사상구장애인복지관
+
+  - id: womenhall_notice
+    name: 부산광역시 여성회관 - 공지사항
+    org_type: 여성·가족
+    district: 부산전체
+    collector: generic_board
+    url: https://www.busan.go.kr/woman/whnotice
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: curPage
+      org_name: 부산광역시 여성회관
+
+  # 여성인력개발센터 (부산시 지정 6곳: 해운대·동래·부산진·사상·동구·사하). 공지사항에 직원·강사 채용 공고가 올라온다
+  - id: bswoman_notice
+    name: 부산진여성인력개발센터 - 공지사항
+    org_type: 여성·가족
+    district: 부산진구
+    collector: generic_board
+    url: https://www.bswoman.or.kr/sub4/sub1.aspx
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: b
+      org_name: 부산진여성인력개발센터
+
+  - id: dongnae_woman_notice
+    name: 동래여성인력개발센터 - 공지사항
+    org_type: 여성·가족
+    district: 동래구
+    collector: generic_board
+    url: https://www.womancenter.or.kr/sub3/sub1.aspx
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: b
+      org_name: 동래여성인력개발센터
+
+  - id: hwcenter_notice
+    name: 해운대여성인력개발센터 - 공지사항
+    org_type: 여성·가족
+    district: 해운대구
+    collector: generic_board
+    url: https://www.hwcenter.or.kr/SW_bbs/notice/list.php?zipEncode==u2yPr3BU91vt1drjrMCH9MyMetpSfMvWLME
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 표가 아닌 <ul class="bbsList"><li> 목록. 게시판 번호·글 번호는 zipEncode 로 감싼 주소에 들어 있음
+      row_selector: "ul.bbsList > li"
+      title_selector: ".txt1"
+      date_selector: ".txt2 span"
+      org_name: 해운대여성인력개발센터
+
+  - id: donggu_woman_notice
+    name: 동구여성인력개발센터 - 공지사항
+    org_type: 여성·가족
+    district: 동구
+    collector: generic_board
+    url: http://www.ewoman.or.kr/p/?j=41  # https 는 인증서 이름이 맞지 않아 http 로 읽는다
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: bbs_uid
+      org_name: 동구여성인력개발센터
+
+  - id: saha_woman_notice
+    name: 사하여성인력개발센터 - 공지사항
+    org_type: 여성·가족
+    district: 사하구
+    collector: generic_board
+    url: https://www.sahawcenter.or.kr/sub5/sub1.aspx
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: b
+      org_name: 사하여성인력개발센터
+
+  - id: sasang_woman
+    name: 사상여성인력개발센터
+    org_type: 여성·가족
+    district: 사상구
+    collector: generic_board
+    url: http://www.bbwoman.or.kr/
+    keyword_filter: true
+    phase: 3
+    enabled: false
+    verified: false
+    blocked: 첫 화면이 '자동등록방지를 위해 보안절차를 거치고 있습니다' 봇 확인 화면(스크립트로 쿠키를 만들어야 열림). 사이트가 자동 수집을 막는 것이라 우회하지 않음
+
+  - id: bgli_hire
+    name: 부산여성가족과평생교육진흥원 - 채용
+    org_type: 시 산하기관
+    district: 부산전체
+    collector: generic_board
+    url: https://www.bgli.re.kr/kor/CMS/Board/Board.do?mCode=MN084
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: board_seq
+      org_name: 부산여성가족과평생교육진흥원
+
+  - id: bgli_notice
+    name: 부산여성가족과평생교육진흥원 - 공지사항 (성평등·폭력예방 교육 위촉 강사 모집 등)
+    org_type: 시 산하기관
+    district: 부산전체
+    collector: generic_board
+    url: https://www.bgli.re.kr/kor/CMS/Board/Board.do?mCode=MN083
+    pages: 1  # 한 쪽(10건)이 2주 남짓
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: board_seq
+      org_name: 부산여성가족과평생교육진흥원
+      org_fixed: true  # 작성자 칸이 '여평원'
+      # 평생교육이용권·시민대학 안내가 대부분이라 강사 모집 글만 ('늘봄&돌봄 부스터 강사육성 과정' 은 제외 키워드)
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: bgli_trust
+    name: 부산여성가족과평생교육진흥원 - 여평원 수탁기관 (부산광역시건강가정지원센터 등 채용)
+    org_type: 여성·가족
+    district: 부산전체
+    collector: generic_board
+    # 부산광역시건강가정지원센터 누리집(bsfc.familynet.or.kr)은 러너 접속을 막아서, 위탁 운영하는 진흥원이 대신 올리는 게시판으로 받는다
+    url: https://www.bgli.re.kr/kor/CMS/Board/Board.do?mCode=MN162
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: board_seq
+      title_org_pattern: "(부산(?:광역)?시\\s?(?:건강가정지원센터|아이돌봄광역지원센터|일생활균형지원센터|여성폭력방지종합지원센터))"
+      org_name: 부산여성가족과평생교육진흥원
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: bgli_other
+    name: 부산여성가족과평생교육진흥원 - 타기관 소식 (여성인력개발센터 등)
+    org_type: 여성·가족
+    district: 부산전체
+    collector: generic_board
+    url: https://www.bgli.re.kr/kor/CMS/Board/Board.do?mCode=MN098
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: board_seq
+
+  # 가족센터·다문화가족지원센터: 구·군 센터 누리집(*.familynet.or.kr)은 러너 접속을 '400 Request Blocked' 로 막아서(robots.txt 까지)
+  # 센터 채용 공고가 모이는 다누리(다문화가족지원포털) 채용정보를 부산(area=A002)으로 걸러 받는다
+  - id: family_danuri_hire
+    name: 다누리 채용정보 - 부산 가족센터·다문화가족지원센터 (이중언어·한국어 강사 등)
+    org_type: 여성·가족
+    district: 부산전체
+    collector: generic_board
+    url: https://www.liveinkorea.kr/web/lay1/bbs/S1T10C29/A/6/list.do?area=A002
+    pages: 1  # 한 쪽(10건)이 두세 달
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # <dl class="tbl_list_type1"><dt><span class="icon_zone">[ 부산 부산진구 ]</span><a href="view.do?article_seq=…">
+      #   <span class="title">…</span></a></dt><dd><ul class="date_search"><li>채용기간</li><li>2026-02-27 ~ 2026-12-11</li>
+      row_selector: dl.tbl_list_type1
+      title_selector: span.title
+      date_selector: "ul.date_search li:nth-of-type(2)"
+      district_selector: span.icon_zone
+      title_org_pattern: "([가-힣]{1,4}(?:구|군)(?:다문화)?가족(?:지원)?센터)"
+      key_param: article_seq
+      org_name: 부산 가족센터
+      # 사회복지사·아이돌봄·통번역 인력 채용이 많아 강사·지도사(언어발달·방문교육) 글만
+      include: [강사, 지도사, 튜터, 멘토, 코치, 인력풀]
+
+  # ─────────────────────────────── 시 출자·출연기관, 부산 일자리 사이트
+  - id: bepa_hire
+    name: 부산경제진흥원 - 채용정보
+    org_type: 시 산하기관
+    district: 부산전체
+    collector: generic_board
+    url: https://www.bepa.kr/kor/view.do?no=1509
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: idx
+      org_name: 부산경제진흥원
+
+  - id: bepa_training
+    name: 부산경제진흥원 - 산업인력 공고 (직업훈련 강사 등)
+    org_type: 시 산하기관
+    district: 부산전체
+    collector: generic_board
+    url: https://www.bepa.kr/kor/view.do?no=1504
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      key_param: idx
+      org_name: 부산경제진흥원
+
+  - id: bscf_hire
+    name: 부산문화재단 - 채용공고 (예술강사 등)
+    org_type: 시 산하기관
+    district: 부산전체
+    collector: generic_board
+    url: https://www.bscf.or.kr/view.do?no=1025
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      # 표가 아닌 <ul class="board-ul-list"><li> 목록, 제목 링크 show('2431') → 같은 폼을 GET 으로
+      row_selector: "ul.board-ul-list > li"
+      title_selector: ".title .txt"
+      date_selector: ".date"
+      link_template: "https://www.bscf.or.kr/view.do?no=1025&pgMode=show&pbancSn={0}"
+      key_param: pbancSn
+      org_name: 부산문화재단
+
+  - id: busanjob_public
+    name: 부산일자리정보망 - 공공채용 (구·군·공공기관 강사 모집 포함)
+    org_type: 국가·공공기관
+    district: 부산전체
+    collector: generic_board
+    url: https://www.busanjob.net/view.do?no=1309&pgMode=index&pageIndex=1
+    pages: 2
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: pageIndex
+      row_selector: "ul.emif-lst > li"
+      title_selector: ".tit"
+      date_selector: ".item.date"  # '2026-09-28 ~ 2026-10-12' (접수기간)
+      org_selector: ".org"
+      link_template: "https://www.busanjob.net/view.do?no=1309&pgMode=show&id={0}"
+      key_param: id
+
+  # 조사했지만 넣지 않은 곳 (2026-09-29 GitHub 러너에서 확인)
+  # - 해외 접속 차단: 부산시설공단(bisco.or.kr), 수영구청(www·eminwon·m.suyeong.go.kr → suyeong_hire 는 꺼 둠), 금정구청 홈페이지(www.geumjeong.go.kr;
+  #   새올 eminwon.geumjeong.go.kr 은 됨), 해운대YMCA청소년수련관, 부산관광공사
+  # - 새올 채용공고가 비어 있는 구: 중구·북구·강서구·기장군 (not_ancmt_se_code=05 가 0건)
+  #   → 중구·북구·기장군은 위의 구청 일자리 게시판으로, 강서구는 새올 고시공고 전체(gangseo_gosi)로 대신 받는다
+  # - 부산시청 채용공고(nbincruit): 분야별 통합 채용정보(city_jobs)와 같은 글
+  # - 부산교육청 공지사항·늘봄지원센터 공지: 강사 모집이 아닌 안내 글, 교육공무직원 채용(ginsa.pen.go.kr): 조리실무사 등
+  # - 여성회관 강사초빙: 목록이 비어 있는 안내 화면
+  # - 부산디자인진흥원·부산정보산업진흥원: 정규 직원 채용만 올라옴

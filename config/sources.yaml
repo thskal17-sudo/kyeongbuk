@@ -1,0 +1,31 @@
+# 경북 강사 구인공고 수집 대상 목록
+#
+# - phase: 구현 단계. max_phase 이하이면서 enabled: true 인 소스만 매일 수집한다.
+#     1단계 교육청·학교와 국가 공공기관 / 2단계 도청·시군청·공단(체육시설) / 3단계 평생학습·도서관·청소년·여성·출연기관
+# - verified: GitHub Actions 러너에서 실제 접속·목록 구조를 확인한 소스.
+# - keyword_filter: 강사 전용 게시판이면 false (모든 글 수집), 일반 게시판이면 true (강사 키워드로 거름).
+# - options: 수집기별 설정 (page_param: 페이지 번호 파라미터, key_param: 게시글 번호 파라미터 등).
+#   자세한 설명은 src/gyeongbuk_jobs/collectors/board.py 머리말 참고.
+# - 해외 서버(GitHub 러너) 접속을 막는 사이트는 enabled: false 로 두고 blocked 에 까닭을 적었다.
+#
+# 새 소스를 추가할 때는 먼저 진단 도구로 구조를 확인한다:
+#   GitHub Actions > 사이트 진단 (probe) > Run workflow > args: --no-reach --parse --url <목록 주소>
+
+max_phase: 3
+
+sources:
+  # ─────────────────────────────── 국가·공공 (공식 API·통합 채용 사이트)
+  - id: work24_api
+    name: 고용24(워크넷) 채용정보 Open API
+    org_type: 국가·공공기관
+    district: 경북전체
+    collector: work24_api
+    url: https://www.work24.go.kr/cm/e/a/0110/selectOpenApiIntro.do
+    params:
+      region: "47000"   # 경상북도 전체
+      keyword: 강사
+    auth_env: WORK24_API_KEY  # 없으면 '설정필요'로 표시하고 건너뜀
+    keyword_filter: true
+    phase: 1
+    enabled: true
+    verified: false

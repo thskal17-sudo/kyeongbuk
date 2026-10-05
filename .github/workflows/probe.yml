@@ -1,0 +1,44 @@
+name: 사이트 진단 (probe)
+
+on:
+  workflow_dispatch:
+    inputs:
+      args:
+        description: "probe.py 인자 (예: --no-reach --parse --url https://... / --detail pen_school_hire)"
+        required: false
+        default: ""
+      check:
+        description: "check-source 로 시험 수집할 소스 id (공백 구분, 예: pen_school_hire bnfmc_hire)"
+        required: false
+        default: ""
+  # 후보 주소 목록(scripts/probe_urls.txt)을 바꿔 올리면 그 주소들에 게시판 파서를 돌려 본다
+  push:
+    paths:
+      - "scripts/probe_urls.txt"
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      # set -f: URL 의 ? 등이 파일 이름으로 확장되지 않게 함
+      - if: github.event_name == 'push'
+        run: python scripts/probe.py --no-reach --parse --url-file scripts/probe_urls.txt
+        env:
+          PYTHONUNBUFFERED: "1"
+      - if: github.event_name == 'workflow_dispatch' && github.event.inputs.check == ''
+        run: set -f; python scripts/probe.py $PROBE_ARGS
+        env:
+          PYTHONUNBUFFERED: "1"
+          PROBE_ARGS: ${{ github.event.inputs.args }}
+      - if: github.event_name == 'workflow_dispatch' && github.event.inputs.check != ''
+        run: python -m gyeongbuk_jobs check-source $CHECK_IDS
+        env:
+          PYTHONPATH: src
+          PYTHONUNBUFFERED: "1"
+          CHECK_IDS: ${{ github.event.inputs.check }}

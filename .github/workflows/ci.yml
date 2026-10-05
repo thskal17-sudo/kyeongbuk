@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches-ignore: [state]
+    paths-ignore: ["scripts/probe_urls.txt"]  # 진단용 후보 주소만 바꾼 커밋
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - run: python -m pytest -q
+
+  # 실제 사이트에서 수집이 되는지 확인 (메일·DB 저장 없음). 결과 엑셀은 Artifacts 에 올라간다.
+  live-check:
+    needs: test
+    runs-on: ubuntu-latest
+    # 수집은 20분이 넘으면 스스로 멈추고 결과를 낸다 (pipeline.collect_all). 작업 제한은 그보다 넉넉하게 (매일 작업과 같은 30분)
+    timeout-minutes: 30
+    env:
+      PYTHONPATH: src
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python -m gyeongbuk_jobs run --no-mail --db "$RUNNER_TEMP/ci.db" --out out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: live-check-report
+          path: out/*.xlsx
+          retention-days: 7
