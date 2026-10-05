@@ -640,8 +640,9 @@ sources:
     pages: 1
     keyword_filter: true
     phase: 1
-    enabled: true
-    verified: false  # 2026-10-05 진단 때 읽기 시간 초과 (같은 서버의 다른 게시판은 됨)
+    enabled: false
+    verified: false
+    blocked: "2026-10-05 러너 진단 때 한 번은 시간 초과, 한 번은 글 0건 (빈 게시판으로 보임). 영덕 공고는 모집공고 게시판(yd_edu_recruit)으로 받음"
     options:
       page_param: currPage
       link_attr: data-id
