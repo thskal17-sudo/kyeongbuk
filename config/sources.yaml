@@ -1043,6 +1043,7 @@ sources:
       link_template: "https://www.pohang.go.kr/portal/agent/board/view.do?idx={0}&mid=0201020000&agentTypeCode=0"
       key_param: idx
 
+  # <a data-action="/portal/bbs/view.do?bIdx=…&ptIdx=76" onclick="req.post(this)">: mId 가 없으면 '게시판이 존재하지 않습니다' 라서 붙인다
   - id: andong_agency_notice
     name: 안동시청 유관기관 공지/소식
     org_type: 지자체
@@ -1056,6 +1057,7 @@ sources:
     verified: true
     options:
       link_attr: data-action
+      link_template: "https://www.andong.go.kr{0}&mId=0401070000"
       key_param: bIdx
 
   # 청도군·울릉군·청송군 홈페이지와 새올은 해외 접속을 웹 방화벽이 막는다 (2026-10-05). 세 곳 공고는 나라일터(gojobs_list)로 일부 받는다.
@@ -1170,6 +1172,7 @@ sources:
       org_name: 포항시 평생학습원
       include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
 
+  # data-action 주소에 mId 를 붙여야 상세가 열린다
   - id: andong_lll_notice
     name: 안동시 평생학습관 공지사항
     org_type: 평생교육·도서관
@@ -1183,6 +1186,7 @@ sources:
     verified: true
     options:
       link_attr: data-action
+      link_template: "https://www.andong.go.kr{0}&mId=0501000000"
       key_param: bIdx
       org_name: 안동시 평생학습관
       org_fixed: true
