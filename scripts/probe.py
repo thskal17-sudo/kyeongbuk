@@ -312,13 +312,14 @@ def main() -> int:
     parser.add_argument("--around", nargs="*", default=None, help="본문에서 이 단어 주변 글 출력")
     parser.add_argument("--no-reach", action="store_true", help="전체 소스 접속 확인을 건너뜀")
     parser.add_argument("--parse", action="store_true", help="--url 들에 게시판 파서를 돌려 결과만 짧게 출력")
-    parser.add_argument("--url-file", default=None, help="URL 목록 파일 (한 줄에 하나, # 은 주석)")
+    parser.add_argument("--url-file", default=None, help="URL 목록 파일 (한 줄에 하나, # 은 주석, 줄 끝 legacy_tls·short_headers)")
     parser.add_argument("--raw", type=int, default=0, help="--parse 에서 본문 HTML 을 이 글자 수만큼 출력")
     parser.add_argument("--raw-from", default="", help="--raw 출력을 이 글자가 처음 나오는 곳부터 시작")
     parser.add_argument("--grep", default=None, help="--parse 에서 HTML 에 이 정규식이 나오는 곳을 출력")
     parser.add_argument("--follow-js", action="store_true", help="--grep 을 같은 사이트의 외부 JS 파일에도 적용")
     parser.add_argument("--browser-ua", action="store_true", help="봇 표시 없는 일반 브라우저 User-Agent 사용")
     parser.add_argument("--legacy-tls", action="store_true", help="--url 호스트에 구형 TLS 허용")
+    parser.add_argument("--short-headers", action="store_true", help="--url 호스트에 짧은 요청 머리글 (새올 400 대비)")
     parser.add_argument("--form-post", default=None, help="--parse 에서 이 셀렉터의 폼을 POST 한 응답을 본다 (예: form#frm)")
     parser.add_argument("--data", default="", help="--form-post 에 더할 값 (a=1&b=2)")
     parser.add_argument("--attach", action="store_true", help="--url(상세 페이지)의 첨부 공고문을 내려받아 글자와 마감일 확인")
@@ -340,12 +341,14 @@ def main() -> int:
         for line in (ROOT / args.url_file).read_text(encoding="utf-8").splitlines():
             line = line.strip()
             if line.startswith("http"):
-                args.url.append(line.split()[0])
-    if args.legacy_tls:
-        from urllib.parse import urlsplit
-
+                url = line.split()[0]
+                args.url.append(url)
+                # 줄 끝에 legacy_tls / short_headers 를 적으면 그 주소의 호스트에만 연결 옵션을 켠다
+                words = line.split()
+                HTTP.setup_host(url, {"legacy_tls": "legacy_tls" in words, "short_headers": "short_headers" in words})
+    if args.legacy_tls or args.short_headers:
         for url in args.url:
-            HTTP.allow_legacy_tls(urlsplit(url).hostname or "")
+            HTTP.setup_host(url, {"legacy_tls": args.legacy_tls, "short_headers": args.short_headers})
     if args.attach:
         for url in args.url:
             attach_report(url, args.attach_template)
