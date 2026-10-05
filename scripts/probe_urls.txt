@@ -1,25 +1,58 @@
-# 새올 채용공고(05)가 0건인 곳: 전체 분류
-https://eminwon.gc.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=30&title=%EA%B3%A0%EC%8B%9C%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1
-https://eminwon.yc.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=30&title=%EA%B3%A0%EC%8B%9C%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1
-https://eminwon.yyg.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=30&title=%EA%B3%A0%EC%8B%9C%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1
-https://eminwon.yd.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=30&title=%EA%B3%A0%EC%8B%9C%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1
-https://eminwon.sj.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=30&title=%EA%B3%A0%EC%8B%9C%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1
-https://eminwon.bonghwa.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=30&title=%EA%B3%A0%EC%8B%9C%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1
-https://eminwon.goryeong.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1 short_headers
-https://eminwon.usc.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1 legacy_tls
-https://eminwon.ycg.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1 legacy_tls
-# 접속 시간 초과였던 곳 재시도
-https://eminwon.gyeongju.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1
-https://eminwon.gumi.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1
-https://eminwon.cs.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1
-https://eminwon.gb.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1
-# 시·군 홈페이지 첫 화면 (채용·고시 게시판 링크 찾기)
-https://www.gb.go.kr/
-https://www.gyeongju.go.kr/
-https://www.gumi.go.kr/
-https://www.cheongdo.go.kr/
-https://www.ulleung.go.kr/
-https://www.cs.go.kr/
-https://www.goryeong.go.kr/
-https://www.ycg.kr/
-https://www.usc.go.kr/
+# 교육지원청 (경북교육청 하위 사이트)
+https://www.gbe.kr/ph/na/ntt/selectNttList.do?mi=8176&bbsId=1507
+https://www.gbe.kr/ph/na/ntt/selectNttList.do?mi=13585&bbsId=3611
+https://www.gbe.kr/gj/na/ntt/selectNttList.do?mi=5358&bbsId=1583
+https://www.gbe.kr/gc/na/ntt/selectNttList.do?mi=4578&bbsId=1606
+https://www.gbe.kr/ad/na/ntt/selectNttList.do?mi=5700&bbsId=1702
+https://www.gbe.kr/ad/na/ntt/selectNttList.do?mi=5698&bbsId=1701
+https://www.gbe.kr/ad/na/ntt/selectNttList.do?mi=15715&bbsId=4077
+https://www.gbe.kr/gm/na/ntt/selectNttList.do?mi=9760&bbsId=3230
+https://www.gbe.kr/gm/na/ntt/selectNttList.do?mi=13650&bbsId=3684
+https://www.gbe.kr/yj/na/ntt/selectNttList.do?mi=3250&bbsId=1961
+https://www.gbe.kr/yc/na/ntt/selectNttList.do?mi=4403&bbsId=2078
+https://www.gbe.kr/yc/na/ntt/selectNttList.do?mi=14163&bbsId=3895
+https://www.gbe.kr/sje/na/ntt/selectNttList.do?mi=10034&bbsId=3014
+https://www.gbe.kr/mg/na/ntt/selectNttList.do?mi=16077&bbsId=4163
+https://www.gbe.kr/mg/na/ntt/selectNttList.do?mi=20813
+https://www.gbe.kr/gs/na/ntt/selectNttList.do?mi=19265&bbsId=2577
+https://www.gbe.kr/gs/na/ntt/selectNttList.do?mi=6128
+https://www.gbe.kr/us/na/ntt/selectNttList.do?mi=6290&bbsId=2461
+https://www.gbe.kr/us/na/ntt/selectNttList.do?mi=14313&bbsId=3932
+https://www.gbe.kr/cs/na/ntt/selectNttList.do?mi=7010&bbsId=2515
+https://www.gbe.kr/cs/na/ntt/selectNttList.do?mi=7015&bbsId=2518
+https://www.gbe.kr/yy/na/ntt/selectNttList.do?mi=10538&bbsId=3093
+https://www.gbe.kr/yy/na/ntt/selectNttList.do?mi=14405&bbsId=4017
+https://www.gbe.kr/yd/na/ntt/selectNttList.do?mi=5007
+https://www.gbe.kr/yd/na/ntt/selectNttList.do?mi=5105&bbsId=2352
+https://www.gbe.kr/cd/na/ntt/selectNttList.do?mi=10467
+https://www.gbe.kr/gr/na/ntt/selectNttList.do?mi=7352&bbsId=2356
+https://www.gbe.kr/sj/na/ntt/selectNttList.do?mi=3459&bbsId=2199
+https://www.gbe.kr/cg/na/ntt/selectNttList.do?mi=4076&bbsId=2166
+https://www.gbe.kr/ycg/na/ntt/selectNttList.do?mi=4640&bbsId=2026
+https://www.gbe.kr/bh/na/ntt/selectNttList.do?mi=5670&bbsId=1801
+https://www.gbe.kr/bh/na/ntt/selectNttList.do?mi=5677&bbsId=1802
+https://www.gbe.kr/uj/na/ntt/selectNttList.do?mi=7092&bbsId=1772
+https://www.gbe.kr/ul/na/ntt/selectNttList.do?mi=13969&bbsId=3786
+https://www.gbe.kr/main/na/ntt/selectNttList.do?mi=20420&bbsId=5521
+# 도청
+https://www.gb.go.kr/Main/open_contents/section/job/index.html
+https://www.gb.go.kr/page/10109/67.do
+https://www.gb.go.kr/Main/page.do?mnu_uid=2917&BD_CODE=dobo
+# 시·군 홈페이지 게시판
+https://eminwon.yyg.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=30&title=%EA%B3%A0%EC%8B%9C%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1 short_headers
+https://www.gyeongju.go.kr/open_content/ko/page.do?mnu_uid=435
+https://www.gumi.go.kr/job/saeol/gosi/list.do?seCode=98&mid=0101010000
+https://www.gumi.go.kr/portal/board/post/list.do?bcIdx=207&mid=0401120000
+https://www.pohang.go.kr/economy/saeol/gosi/list.do?seCode=05&mid=0101000000
+https://www.usc.go.kr/ko/page.do?mnu_uid=179&boardType=notice&board_code=05
+https://www.ycg.kr/open.content/ko/administrative/news/recruitment/
+https://www.andong.go.kr/portal/contents.do?mId=0602020000
+https://www.chilgok.go.kr/portal/bbs/list.do?ptIdx=360&mId=0711010000
+https://www.sj.go.kr/page.do?mnu_uid=1154
+https://www.yd.go.kr/?p=977
+https://www.sangju.go.kr/life/page/10503/10204.tc
+https://www.gc.go.kr/jobPortal/bbs/list.do?ptIdx=1611&mId=0102000000
+https://yccms.yc.go.kr/portal/jobOffer/list.do?mId=0201080100
+https://www.uljin.go.kr/index.uljin?menuCd=DOM_000000103002012000
+# 잡알리오 근무지 코드 찾기
+https://job.alio.go.kr/recruit.do
