@@ -54,9 +54,16 @@ _STICKY = (CLOSED, DUPLICATE)  # 다음 날 목록에 그대로 있어도 '모�
 _WHOLE_CITY = ("", "경북전체")
 
 
+# 게시판이 제목 앞에 붙이는 분류 표시 (경산교육지원청 '[기타] 학교운동부 테니스지도자 채용공고' ↔ 본청 같은 글).
+# 학교 이름 표시('[구정초]')는 다른 학교의 같은 제목과 구별해야 해서 남긴다
+_CATEGORY_PREFIX = re.compile(
+    r"^\s*\[\s*(기타|계약제\s*교원|교육공무직원?|방과후학교\s*강사|[초중]등\s*기간제|구인|공고|상시|모집)\s*\]\s*"
+)
+
+
 def title_key(title: str) -> str:
-    """중복 비교용 제목: 글자·숫자만 (공백·괄호·기호 무시)."""
-    return re.sub(r"[^0-9A-Za-z가-힣]", "", title or "")
+    """중복 비교용 제목: 글자·숫자만 (공백·괄호·기호, 앞의 분류 표시 무시)."""
+    return re.sub(r"[^0-9A-Za-z가-힣]", "", _CATEGORY_PREFIX.sub("", title or ""))
 
 
 def _same_posting(p: Posting, title: str, district: str | None, posted: date | None, min_key: int = 12) -> bool:

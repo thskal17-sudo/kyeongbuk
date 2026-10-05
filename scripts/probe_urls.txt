@@ -1,14 +1,10 @@
-# 교육지원청 추가 게시판 (메뉴에서 찾음)
-https://www.gbe.kr/yd/na/ntt/selectNttList.do?mi=18295&bbsId=4947
-https://www.gbe.kr/yd/na/ntt/selectNttList.do?mi=13833&bbsId=3655
-https://www.gbe.kr/cd/na/ntt/selectNttList.do?mi=17912&bbsId=4816
-https://www.gbe.kr/ul/na/ntt/selectNttList.do?mi=13959&bbsId=3780
-https://www.gbe.kr/ul/na/ntt/selectNttList.do?mi=8077&bbsId=1556
-https://www.gbe.kr/cs/na/ntt/selectNttList.do?mi=13742&bbsId=3748
-https://www.gbe.kr/cs/na/ntt/selectNttList.do?mi=7016&bbsId=2520
-https://www.gbe.kr/ph/na/ntt/selectNttList.do?mi=8176&bbsId=1507
-https://www.gbe.kr/ph/na/ntt/selectNttList.do?mi=13576&bbsId=3606
-https://www.gbe.kr/ph/na/ntt/selectNttList.do?mi=13589&bbsId=3613
-https://www.gbe.kr/us/na/ntt/selectNttList.do?mi=6297&bbsId=2464
-https://www.gbe.kr/mg/na/ntt/selectNttList.do?mi=16077&bbsId=4163
-https://www.gbe.kr/main/na/ntt/selectNttList.do?mi=3652&bbsId=2595
+# 상세 페이지 주소 틀 확인 (sources.yaml 의 link_template 로 만든 주소가 열리는지)
+https://www.gcfmc.or.kr/board/detail.tc?mn=6051&mngNo=3&pageSeq=6006&boardNo=3341
+https://www.yc.or.kr/portal/bbs/view.do?bIdx=1216&ptIdx=201&mId=0402000000
+https://www.gumi.go.kr/portal/board/post/view.do?idx=842872&bcIdx=207&mid=0401120000
+https://www.gumi.go.kr/arts/board/post/view.do?idx=842560&bcIdx=1&mid=0501000000
+https://www.pohang.go.kr/portal/agent/board/view.do?idx=1004598&mid=0201020000&agentTypeCode=0
+https://www.andong.go.kr/edu/bbs/view.do?bIdx=780485&ptIdx=752
+https://www.gumi.go.kr/job/saeol/gosi/view.do?notAncmtMgtNo=73966&mid=0101010000
+https://eminwon.pohang.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectOfrNotAncmt&methodnm=selectOfrNotAncmtRegst&not_ancmt_mgt_no=75649&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&list_gubun=A&Key=B_Subject
+https://www.gbe.kr/main/na/ntt/selectNttInfo.do?mi=3642&bbsId=1892&nttSn=1648757

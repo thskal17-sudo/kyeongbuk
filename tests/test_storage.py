@@ -6,6 +6,22 @@ from gyeongbuk_jobs.storage import DUPLICATE, Store, title_key
 NOW = datetime(2026, 9, 29, 6, 37, tzinfo=KST)
 
 
+def test_title_key_ignores_board_category_prefix():
+    from gyeongbuk_jobs.storage import title_key
+
+    # 교육지원청 게시판은 제목 앞에 분류를 붙여 보여 준다 (본청 게시판의 같은 글과 한 번만 보내기)
+    assert title_key("[기타] 경산교육지원청 학교운동부 테니스지도자 채용공고(10차)") == title_key(
+        "경산교육지원청 학교운동부 테니스지도자 채용공고(10차)"
+    )
+    assert title_key("[계약제 교원] 2026학년도 2학기 계약제 교원(시간 강사)채용 공고문") == title_key(
+        "2026학년도 2학기 계약제 교원(시간 강사)채용 공고문"
+    )
+    # 학교 이름 표시는 남긴다
+    assert title_key("[구정초]2026학년도 계약제교원(전일제강사) 채용 공고") != title_key(
+        "[농소초]2026학년도 계약제교원(전일제강사) 채용 공고"
+    )
+
+
 def _p(source, key, title, district="경북전체", posted=date(2026, 9, 29), org=""):
     return Posting(source, title, f"https://example.org/{source}/{key}", key, org, district=district, posted_date=posted)
 

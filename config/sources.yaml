@@ -63,6 +63,25 @@ sources:
       link_template: "https://www.gojobs.go.kr/apmView.do?empmnsn={1}&searchJobsecode={0}&menuNo=401&selMenuNo=400"
       key_param: empmnsn
 
+  - id: alio_recruit
+    name: 잡알리오 공공기관 채용정보 (근무지 경북)
+    org_type: 국가·공공기관
+    district: 경북전체
+    collector: form_board  # 목록은 검색 폼(_csrf 토큰)을 POST 해야 나온다
+    url: https://job.alio.go.kr/recruit.do
+    pages: 2
+    keyword_filter: true
+    phase: 1
+    enabled: true
+    verified: true
+    options:
+      form_selector: "form#frm"
+      data:
+        search_yn: "Y"
+        location: R3021  # 경상북도 (검색 폼의 근무지 선택값)
+      page_param: pageNo
+      key_param: idx
+
   # ─────────────────────────────── 경북교육청 본청 (지역 칸이 있어 시·군을 알 수 있음)
 
   # 경북교육청 게시판(na/ntt)은 제목 링크가 <a data-id="글번호" href="javascript:"> 이고 상세는 selectNttInfo.do 로 GET 으로 열린다

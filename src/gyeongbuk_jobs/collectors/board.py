@@ -61,7 +61,9 @@ _HEADER_MAP = {
 _VOLATILE_PARAMS = re.compile(r"page|currpage|rowperpage|search|srch|sort|_csrf|jsessionid", re.I)
 # 작성자 칸의 계정·직위 ('문화의집관리자', '인사담당자', '분관 과장')는 기관명이 아니다
 _NOT_ORG = re.compile(
-    r"^(\S*(관리자|담당자)|담당|admin|운영자|홈페이지|-|\S*\s?(과장|팀장|주임|대리|실장|센터장|관장))?$", re.I
+    r"^(\S*(관리자|담당자)|담당|admin|운영자|홈페이지|-|\S*\s?(과장|팀장|주임|대리|실장|센터장|관장)"
+    r"|학교|지역교육청|본청|직속기관|사업소)?$",  # 뒤의 다섯은 경북교육청 '기관별' 칸의 분류 값
+    re.I
 )
 # 작성자 칸의 사람 이름 (최희상, 김예솔): 한글 2~4자이고 기관 이름처럼 끝나지 않는 것
 _PERSON = re.compile(r"[가-힣]{2,4}")
