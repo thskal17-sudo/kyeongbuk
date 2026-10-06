@@ -324,3 +324,98 @@ def test_mail_separates_unreachable_sites_from_real_problems():
     assert "확인이 필요한 사이트 1곳" in html and "부산시설공단 - 강습위탁: 목록에서 글을 하나도 읽지 못함" in html
     assert "접속 안 된 사이트 2곳" in html and "나라일터 모집공고 · 중구청 채용공고(새올)" in html
     assert "기관명에" not in html and "부산도서관" not in html
+
+
+KOREA_YAML = SOURCES_YAML.replace(
+    """  - id: broken
+    name: 고장난 게시판""",
+    """  - id: blocked
+    name: 해외 차단 게시판
+    org_type: 평생교육·도서관
+    collector: fake_korea
+    url: https://example.org/korea
+    phase: 1
+    enabled: true
+    korea_only: true
+  - id: broken
+    name: 고장난 게시판""",
+)
+
+
+class KoreaCollector(Collector):
+    def collect(self):
+        return [Posting("blocked", "도서관 독서문화프로그램 강사 모집", "https://example.org/k1", "k1", "안동시립도서관",
+                        deadline=date(2026, 10, 2))]
+
+
+@pytest.fixture
+def korea_env(env, monkeypatch):
+    tmp_path, config, sent = env
+    (config / "sources.yaml").write_text(KOREA_YAML, encoding="utf-8")
+    monkeypatch.setitem(COLLECTORS, "fake_korea", KoreaCollector)
+    return tmp_path, config, sent
+
+
+def test_github_run_skips_korea_only_sources(korea_env):
+    tmp_path, config, sent = korea_env
+    outcome = run(tmp_path, config, send_mail=False)
+    assert {r.source_id for r in outcome.results} == {"fake", "broken"}
+
+
+def test_korea_pc_collects_only_korea_sources_without_mail(korea_env):
+    tmp_path, config, sent = korea_env
+    outcome = pipeline.run(
+        db_path=tmp_path / "korea.db", out_dir=tmp_path / "out-korea", send_mail=True, config_dir=config,
+        now=NOW, korea=True,
+    )
+    assert [r.source_id for r in outcome.results] == ["blocked"]
+    assert not outcome.mailed and sent == []
+
+
+def test_daily_run_merges_korea_pc_results_into_one_mail(korea_env):
+    tmp_path, config, sent = korea_env
+    pipeline.run(
+        db_path=tmp_path / "korea.db", out_dir=tmp_path / "out-korea", send_mail=False, config_dir=config,
+        now=datetime(2026, 9, 26, 5, 47, tzinfo=KST), korea=True,
+    )
+    outcome = pipeline.run(
+        db_path=tmp_path / "db.sqlite", out_dir=tmp_path / "out", send_mail=True, config_dir=config, now=NOW,
+        korea_db=tmp_path / "korea.db",
+    )
+    blocked = next(r for r in outcome.results if r.source_id == "blocked")
+    assert (blocked.state, blocked.matched, blocked.new, blocked.relayed) == ("정상", 1, 1, True)
+    assert not blocked.needs_other_server  # GitHub 서버에서 다시 수집하지 않음
+    assert "도서관 독서문화프로그램 강사 모집" in [p.title for p in outcome.new]
+    assert len(sent) == 1 and "신규 3건" in sent[0]["Subject"]
+
+    # 다음 날 같은 한국 PC DB 를 다시 가져와도 이미 보낸 공고는 신규가 아님
+    again = pipeline.run(
+        db_path=tmp_path / "db.sqlite", out_dir=tmp_path / "out", send_mail=True, config_dir=config,
+        now=datetime(2026, 9, 26, 20, 0, tzinfo=KST), korea_db=tmp_path / "korea.db",
+    )
+    assert "도서관 독서문화프로그램 강사 모집" not in [p.title for p in again.new]
+
+
+def test_stale_or_missing_korea_db_is_flagged(korea_env):
+    tmp_path, config, sent = korea_env
+    outcome = pipeline.run(
+        db_path=tmp_path / "db.sqlite", out_dir=tmp_path / "out", send_mail=True, config_dir=config, now=NOW,
+        korea_db=tmp_path / "없음.db",
+    )
+    blocked = next(r for r in outcome.results if r.source_id == "blocked")
+    assert blocked.state == "PC미실행" and "기록 없음" in blocked.error
+    assert not blocked.needs_other_server
+    html = sent[0].get_body(("html",)).get_content()
+    assert "한국 PC 미실행 1곳" in html and "해외 차단 게시판" in html
+
+    # 이틀 전 기록뿐이면 마지막 수집 시각을 알려 준다
+    pipeline.run(
+        db_path=tmp_path / "korea.db", out_dir=tmp_path / "out-korea", send_mail=False, config_dir=config,
+        now=datetime(2026, 9, 24, 5, 47, tzinfo=KST), korea=True,
+    )
+    outcome = pipeline.run(
+        db_path=tmp_path / "db2.sqlite", out_dir=tmp_path / "out", send_mail=False, config_dir=config, now=NOW,
+        korea_db=tmp_path / "korea.db",
+    )
+    blocked = next(r for r in outcome.results if r.source_id == "blocked")
+    assert blocked.state == "PC미실행" and "09/24 05:47" in blocked.error

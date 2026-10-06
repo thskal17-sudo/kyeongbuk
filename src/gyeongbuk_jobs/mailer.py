@@ -20,7 +20,7 @@ from html import escape
 from pathlib import Path
 
 from .dates import dday_label
-from .models import Posting, SourceResult
+from .models import PC_WAITING, Posting, SourceResult
 
 WEEKDAYS = "월화수목금토일"
 XLSX_MIME = ("application", "vnd.openxmlformats-officedocument.spreadsheetml.sheet")
@@ -74,7 +74,8 @@ def html_body(
     attachment_note: str = "전체 목록은 첨부 엑셀을 확인하세요.",
 ) -> str:
     problems = [r for r in results if r.is_problem]
-    unreachable = [r for r in results if r.is_unreachable]
+    pc_off = [r for r in results if r.state == PC_WAITING]
+    unreachable = [r for r in results if r.is_unreachable and r.state != PC_WAITING]
     parts = ["<div style=\"font-family:'Malgun Gothic',sans-serif;font-size:14px;color:#222\">"]
     if catch_up:
         parts += [
@@ -102,6 +103,14 @@ def html_body(
             "<div style='background:#f3f4f6;border:1px solid #d1d5db;padding:8px 12px;margin:8px 0;color:#444'>"
             f"<b>접속 안 된 사이트 {len(unreachable)}곳</b> — 수집 서버(해외)의 접속을 막거나 일시 장애인 곳입니다."
             " 다른 서버와 다음 실행에서 다시 수집하므로 따로 할 일은 없습니다."
+            f"<div style='font-size:13px;margin-top:4px'>{names}</div></div>"
+        )
+    if pc_off:
+        names = " · ".join(escape(short_name(r.name)) for r in pc_off)
+        parts.append(
+            "<div style='background:#fff7e6;border:1px solid #f5d9a8;padding:8px 12px;margin:8px 0;color:#444'>"
+            f"<b>한국 PC 미실행 {len(pc_off)}곳</b> — 해외 접속을 막아 한국 PC(자체 실행기)가 읽는 사이트인데,"
+            " 최근 수집 기록이 없습니다. PC와 실행기(actions-runner)가 켜져 있는지 확인하세요."
             f"<div style='font-size:13px;margin-top:4px'>{names}</div></div>"
         )
     parts.append(_table("신규 공고", new, today, limit))

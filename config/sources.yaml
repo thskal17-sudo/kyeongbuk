@@ -1061,46 +1061,7 @@ sources:
       link_template: "https://www.andong.go.kr{0}&mId=0401070000"
       key_param: bIdx
 
-  # 청도군·울릉군·청송군 홈페이지와 새올은 해외 접속을 웹 방화벽이 막는다 (2026-10-05). 세 곳 공고는 나라일터(gojobs_list)로 일부 받는다.
-
-  - id: cheongdo_eminwon
-    name: 청도군청 채용공고(새올)
-    org_type: 지자체
-    district: 청도군
-    collector: generic_board
-    url: "https://eminwon.cheongdo.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1"
-    pages: 1
-    keyword_filter: true
-    phase: 2
-    enabled: false
-    verified: false
-    blocked: "웹 방화벽이 해외 접속 차단 ('contrary to the Web firewall security policies')"
-
-  - id: ulleung_eminwon
-    name: 울릉군청 채용공고(새올)
-    org_type: 지자체
-    district: 울릉군
-    collector: generic_board
-    url: "https://eminwon.ulleung.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1"
-    pages: 1
-    keyword_filter: true
-    phase: 2
-    enabled: false
-    verified: false
-    blocked: 웹 방화벽이 해외 접속 차단
-
-  - id: cheongsong_eminwon
-    name: 청송군청 채용공고(새올)
-    org_type: 지자체
-    district: 청송군
-    collector: generic_board
-    url: "https://eminwon.cs.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1"
-    pages: 1
-    keyword_filter: true
-    phase: 2
-    enabled: false
-    verified: false
-    blocked: 접속 시간 초과 (홈페이지 www.cs.go.kr 도 웹 방화벽 차단)
+  # 청도군·울릉군·청송군 새올은 해외 접속을 막아(웹 방화벽·시간 초과) 한국 PC(자체 실행기)에서 읽는다 → 아래 '한국 PC 담당' 참고
 
   # ─────────────────────────────── 공단·체육시설
 
@@ -2316,6 +2277,263 @@ sources:
       org_name: 영남대학교 글로벌평생교육원
       org_fixed: true
       include: [강사, 튜터, 인력풀, 개설 희망, 강좌 제안, 강의 제안, 강좌제안]
+
+  # ─────────────────────────────── 한국 PC 담당 (해외 접속 차단 사이트, korea_only: true)
+
+  # GitHub 수집 서버(미국)는 이 사이트들에 접속하지 못한다 (시·군 누리집의 웹 방화벽이 해외 IP 를 막음).
+  # 사무실·집의 한국 PC 에 설치한 GitHub 자체 실행기(라벨 korea)가 매일 05:47 에 이것만 먼저 읽어 state-korea 브랜치에
+  # 저장하고(.github/workflows/korea.yml), 06:17 매일 작업이 그 결과를 가져와 한 메일로 보낸다.
+  # 해외에서는 열리지 않아 목록 구조를 미리 확인하지 못했다 (verified: false). 실행기 설치 뒤
+  # 사이트 진단(probe)을 runner: korea 로 돌려 확인한다. 상세 주소 틀은 같은 누리집 틀의 다른 게시판을 따랐다.
+
+  - id: cheongdo_eminwon
+    name: 청도군청 채용공고(새올)
+    org_type: 지자체
+    district: 청도군
+    collector: generic_board
+    url: "https://eminwon.cheongdo.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1"
+    pages: 2
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: false
+    options:
+      korea_only: true
+      page_param: pageIndex
+      org_prefix: 청도군청
+      link_template: "https://eminwon.cheongdo.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectOfrNotAncmt&methodnm=selectOfrNotAncmtRegst&not_ancmt_mgt_no={0}&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&list_gubun=A&Key=B_Subject"
+      key_param: not_ancmt_mgt_no
+
+  - id: ulleung_eminwon
+    name: 울릉군청 채용공고(새올)
+    org_type: 지자체
+    district: 울릉군
+    collector: generic_board
+    url: "https://eminwon.ulleung.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1"
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: false
+    options:
+      korea_only: true
+      page_param: pageIndex
+      org_prefix: 울릉군청
+      link_template: "https://eminwon.ulleung.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectOfrNotAncmt&methodnm=selectOfrNotAncmtRegst&not_ancmt_mgt_no={0}&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&list_gubun=A&Key=B_Subject"
+      key_param: not_ancmt_mgt_no
+
+  - id: cheongsong_eminwon
+    name: 청송군청 채용공고(새올)
+    org_type: 지자체
+    district: 청송군
+    collector: generic_board
+    url: "https://eminwon.cs.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectListOfrNotAncmt&methodnm=selectListOfrNotAncmtHomepage&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&epcCheck=Y&nodate_recent_mm=12&pageIndex=1"
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: false
+    options:
+      korea_only: true
+      page_param: pageIndex
+      org_prefix: 청송군청
+      link_template: "https://eminwon.cs.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectOfrNotAncmt&methodnm=selectOfrNotAncmtRegst&not_ancmt_mgt_no={0}&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&list_gubun=A&Key=B_Subject"
+      key_param: not_ancmt_mgt_no
+
+  - id: gimcheon_town_notice
+    name: 김천시 읍면동 통합 공지 (주민자치·평생학습 강사 모집)
+    org_type: 지자체
+    district: 김천시
+    collector: generic_board
+    url: "https://www.gc.go.kr/portal/bbs/list.do?mId=1202100000&ptIdx=1807"
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: false
+    options:
+      korea_only: true
+      link_template: "https://www.gc.go.kr/portal/bbs/view.do?bIdx={1}&ptIdx={2}&mId={3}"
+      key_param: bIdx
+      org_prefix: 김천시
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gimcheon_jobportal
+    name: 김천시 일자리포털 채용정보
+    org_type: 지자체
+    district: 김천시
+    collector: generic_board
+    url: "https://www.gc.go.kr/jobPortal/bbs/list.do?ptIdx=1611&mId=0102000000"
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: false
+    options:
+      korea_only: true
+      link_template: "https://www.gc.go.kr/jobPortal/bbs/view.do?bIdx={1}&ptIdx={2}&mId={3}"
+      key_param: bIdx
+      org_prefix: 김천시
+
+  - id: chilgok_jobs
+    name: 칠곡군청 구인/구직
+    org_type: 지자체
+    district: 칠곡군
+    collector: generic_board
+    url: "https://www.chilgok.go.kr/portal/bbs/list.do?ptIdx=360&mId=0711010000"
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: false
+    options:
+      korea_only: true
+      link_template: "https://www.chilgok.go.kr/portal/bbs/view.do?bIdx={1}&ptIdx={2}&mId={3}"
+      key_param: bIdx
+
+  - id: pohang_lib_notice
+    name: 포항시립도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 포항시
+    collector: generic_board
+    url: "https://phlib.pohang.go.kr/phlib/board/index.do?menu_idx=33&manage_idx=312"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: false
+    options:
+      korea_only: true
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://phlib.pohang.go.kr/phlib/board/view.do?menu_idx=33&manage_idx=312&board_idx={0}"
+      key_param: board_idx
+      org_name: 포항시립도서관
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: andong_lib_notice
+    name: 안동시립도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 안동시
+    collector: generic_board
+    url: "https://lib.andong.go.kr/andonglibrary/board/index.do?menu_idx=331&manage_idx=1"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: false
+    options:
+      korea_only: true
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://lib.andong.go.kr/andonglibrary/board/view.do?menu_idx=331&manage_idx=1&board_idx={0}"
+      key_param: board_idx
+      org_name: 안동시립도서관
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gyeongsan_lll_notice
+    name: 경산시 평생학습관 공지사항
+    org_type: 평생교육·도서관
+    district: 경산시
+    collector: generic_board
+    url: "https://www.gbgs.go.kr/lll/board/list.tc?mn=2422&mngNo=1"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: false
+    options:
+      korea_only: true
+      link_template: "https://www.gbgs.go.kr/lll/board/detail.tc?mn=2422&mngNo=1&boardNo={0}"
+      key_param: boardNo
+      org_name: 경산시 평생학습관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: cheongdo_lll_notice
+    name: 청도군 평생학습센터 공지사항
+    org_type: 평생교육·도서관
+    district: 청도군
+    collector: generic_board
+    url: "https://www.cheongdo.go.kr/open.content/edu/community/notice/"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: false
+    options:
+      korea_only: true
+      org_name: 청도군 평생학습센터
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: chilgok_culture_notice
+    name: 칠곡군 교육문화회관 공지사항
+    org_type: 평생교육·도서관
+    district: 칠곡군
+    collector: generic_board
+    url: "http://public.chilgok.go.kr/sub/06_02.jsp?gcode=1105"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: false
+    options:
+      korea_only: true
+      org_name: 칠곡군 교육문화회관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: pohang_culture_notice
+    name: 포항문화원 공지사항 (문화학교 강사)
+    org_type: 평생교육·도서관
+    district: 포항시
+    collector: generic_board
+    url: "http://www.phcc.or.kr/phcc/participate/notice/"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: false
+    options:
+      korea_only: true
+      org_name: 포항문화원
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gucf_notice
+    name: 구미문화재단 공지사항
+    org_type: 평생교육·도서관
+    district: 구미시
+    collector: generic_board
+    url: "https://gucf.or.kr/Notice?menuId=MENU_0000000028"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: false
+    options:
+      korea_only: true
+      org_name: 구미문화재단
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: uiduk_lifelong_notice
+    name: 위덕대 평생교육원 공지사항 (강좌 개설 신청)
+    org_type: 평생교육·도서관
+    district: 경주시
+    collector: generic_board
+    url: "https://cec.uu.ac.kr/board/list.asp?m=7&g=1"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: false
+    options:
+      korea_only: true
+      org_name: 위덕대학교 평생교육원
+      org_fixed: true
+      include: [강사, 튜터, 인력풀, 개설 신청, 개설 희망, 강좌 제안, 강의 제안]
 
   # ─────────────────────────────── 청소년·여성·복지
 

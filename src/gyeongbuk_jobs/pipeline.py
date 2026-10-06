@@ -21,7 +21,7 @@ from .http import HostUnreachable, Http, is_connect_failure
 from .jobinfo import INFO_VERSION, extract_info
 from .matching import finished_by
 from .mailer import MailConfig, build_message, html_body, send, subject_line, text_body
-from .models import Posting, SourceResult, now_kst
+from .models import PC_WAITING, Posting, SourceResult, now_kst
 from .report_excel import build_report, sort_key
 from .storage import Store
 
@@ -41,13 +41,62 @@ class RunOutcome:
     upload_path: Path | None = None  # 메일에 붙이는 강사잇다 양식 (마감 전 공고 전부)
 
 
-def select_sources(sources: list[Source], only: list[str] | None, max_phase: int) -> list[Source]:
+def is_korea_only(src: Source) -> bool:
+    """해외 접속을 막아 한국 PC(자체 실행기)에서만 읽는 소스 (sources.yaml 의 korea_only: true)."""
+    return bool(src.options.get("korea_only"))
+
+
+def select_sources(
+    sources: list[Source], only: list[str] | None, max_phase: int, korea: bool = False
+) -> list[Source]:
+    """수집할 소스. 기본(GitHub 서버)은 한국 PC 담당을 빼고, korea=True(한국 PC)면 그것만."""
     if only:
         unknown = set(only) - {s.id for s in sources}
         if unknown:
             raise ValueError(f"알 수 없는 소스 id: {sorted(unknown)}")
         return [s for s in sources if s.id in only]
-    return [s for s in sources if s.enabled and s.phase <= max_phase]
+    return [s for s in sources if s.enabled and s.phase <= max_phase and is_korea_only(s) == korea]
+
+
+def import_korea(
+    store: Store, korea_db: Path, sources: list[Source], now: datetime, max_age_hours: float = 36
+) -> list[SourceResult]:
+    """한국 PC 가 따로 수집해 둔 DB(korea_db)에서 공고와 수집 상태를 가져온다.
+
+    한국 PC 가 같은 판별·상세·첨부 읽기를 다 해 두므로 여기서는 옮기기만 한다. 최근 max_age_hours 안의
+    수집 기록이 없는 소스는 'PC미실행'으로 표시한다 (메일의 회색 상자, GitHub 서버에서 다시 수집하지 않음).
+    """
+    results = []
+    korea = Store(korea_db) if korea_db.exists() else None
+    try:
+        runs = korea.latest_runs([s.id for s in sources]) if korea else {}
+        by_source: dict[str, list[Posting]] = {}
+        for p in korea.postings_of([s.id for s in sources]) if korea else []:
+            by_source.setdefault(p.source_id, []).append(p)
+    finally:
+        if korea:
+            korea.close()
+    for src in sources:
+        result = SourceResult(src.id, src.name, src.org_type, src.url or "", relayed=True)
+        row = runs.get(src.id)
+        ran_at = datetime.fromisoformat(row["run_at"]) if row else None
+        if ran_at is None or (now - ran_at).total_seconds() > max_age_hours * 3600:
+            result.state = PC_WAITING
+            result.error = (
+                f"한국 PC 의 마지막 수집이 {ran_at:%m/%d %H:%M} (PC가 꺼져 있었거나 실행기가 멈춤)"
+                if ran_at else "한국 PC 수집 기록 없음 (실행기 설치 전이거나 PC가 꺼져 있음)"
+            )
+        else:
+            result.state, result.fetched, result.matched, result.error = (
+                row["state"], row["fetched"], row["matched"], row["error"] or "",
+            )
+        for p in by_source.get(src.id, []):
+            if store.upsert(p, now):
+                result.new += 1
+            if p.info and store.detail_state(p.uid)[1] is None:
+                store.set_info(p.uid, p.info)
+        results.append(result)
+    return results
 
 
 def collect_all(
@@ -291,19 +340,26 @@ def run(
     now: datetime | None = None,
     http: Http | None = None,
     catch_up: bool = False,
+    korea: bool = False,
+    korea_db: Path | None = None,
 ) -> RunOutcome:
     """catch_up: 앞선 실행에서 접속 안 된 소스(only)를 다른 서버에서 다시 수집하는 보충 실행.
-    새 공고가 있을 때만 '보충' 메일을 보낸다 (마감임박 목록은 앞선 메일에 이미 있음)."""
+    새 공고가 있을 때만 '보충' 메일을 보낸다 (마감임박 목록은 앞선 메일에 이미 있음).
+    korea: 한국 PC(자체 실행기)에서 해외 차단 소스(korea_only)만 수집해 db_path 에 저장한다 (메일 없음).
+    korea_db: 한국 PC 가 저장해 둔 DB. 주면 그 소스들의 공고·상태를 가져와 함께 보낸다."""
     settings = load_settings(config_dir)
     rules = load_rules(config_dir)
     now = now or now_kst()
     today = now.date()
-    sources = select_sources(settings.sources, only, max_phase or settings.max_phase)
+    sources = select_sources(settings.sources, only, max_phase or settings.max_phase, korea=korea)
     source_names = {s.id: s.name for s in settings.sources}
 
     store = Store(db_path)
     try:
         results = collect_all(sources, rules, store, http or Http(), now)
+        if korea_db is not None and not (korea or catch_up or only):
+            relayed = select_sources(settings.sources, None, max_phase or settings.max_phase, korea=True)
+            results += import_korea(store, korea_db, relayed, now)
         store.log_runs(results, now)
         store.commit()
 
@@ -329,7 +385,7 @@ def run(
             today, results, new, closing_soon, active, report_path, source_names=source_names, upload_path=upload_path
         )
 
-        if send_mail and (new or not catch_up):
+        if send_mail and not korea and (new or not catch_up):
             held = sum(1 for p in active if p.deadline is None)
             note = f"첨부 파일은 강사잇다 올리기 양식입니다 (마감 전 공고 {len(active)}건" + (
                 f", 그중 마감일을 찾지 못한 {held}건은 '보류' 표시)." if held else ")."

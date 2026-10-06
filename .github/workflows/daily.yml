@@ -39,7 +39,10 @@ jobs:
       - run: pip install -r requirements.txt
 
       - name: 이전 수집 기록(DB) 가져오기
-        run: bash scripts/state_db.sh restore
+        run: |
+          bash scripts/state_db.sh restore
+          # 한국 PC(자체 실행기)가 05:47 에 읽어 둔 해외 차단 사이트 결과 (korea.yml)
+          bash scripts/state_db.sh restore data/korea.db state-korea
 
       - name: 수집 → 엑셀 → 메일
         id: run
@@ -52,7 +55,7 @@ jobs:
         run: |
           mail=""
           if [ "$SEND_MAIL" != "true" ]; then mail="--no-mail"; fi
-          python -m gyeongbuk_jobs run --db data/postings.db --out out --retry-list out/retry_sources.txt $mail
+          python -m gyeongbuk_jobs run --db data/postings.db --out out --retry-list out/retry_sources.txt --korea-db data/korea.db $mail
           echo "retry_sources=$(cat out/retry_sources.txt)" >> "$GITHUB_OUTPUT"
 
       - name: 엑셀 보관 (30일)

@@ -31,6 +31,8 @@ def cmd_run(args) -> int:
         only=args.source or None,
         max_phase=args.max_phase,
         catch_up=args.catch_up,
+        korea=args.korea,
+        korea_db=Path(args.korea_db) if args.korea_db else None,
     )
     if args.retry_list:
         retry = [r.source_id for r in outcome.results if r.needs_other_server]
@@ -48,6 +50,8 @@ def cmd_run(args) -> int:
     print(f"강사잇다 양식: {outcome.upload_path} (마감 전 공고 {len(outcome.active)}건)")
     if outcome.mailed:
         print("메일: 발송함")
+    elif args.korea:
+        print("메일: 한국 PC 수집은 보내지 않음 (다음 매일 메일에 함께 들어감)")
     elif args.no_mail:
         print("메일: 발송 안 함 (--no-mail)")
     else:
@@ -128,6 +132,10 @@ def main(argv: list[str] | None = None) -> int:
     p_run.add_argument(
         "--catch-up", action="store_true", help="보충 수집: --source 소스만 다시 수집하고 새 공고가 있을 때만 메일"
     )
+    p_run.add_argument(
+        "--korea", action="store_true", help="한국 PC(자체 실행기)용: 해외 차단 소스(korea_only)만 수집해 --db 에 저장 (메일 없음)"
+    )
+    p_run.add_argument("--korea-db", default=None, help="한국 PC 가 저장해 둔 DB. 그 소스들의 공고·상태를 함께 보냄")
     p_run.set_defaults(func=cmd_run)
 
     p_check = sub.add_parser("check-source", help="소스 시험 수집")

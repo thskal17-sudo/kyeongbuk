@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 
 KST = timezone(timedelta(hours=9))
+PC_WAITING = "PC미실행"  # 한국 PC 담당 소스인데 최근 수집 기록이 없음 (PC가 꺼져 있었음)
 
 
 def now_kst() -> datetime:
@@ -54,6 +55,8 @@ class SourceResult:
     new: int = 0
     error: str = ""
     samples: list[str] = field(default_factory=list)
+    relayed: bool = False  # 한국 PC(자체 실행기)가 수집해 둔 결과를 가져온 소스
+
 
     @property
     def is_problem(self) -> bool:
@@ -63,9 +66,9 @@ class SourceResult:
     @property
     def is_unreachable(self) -> bool:
         """수집 서버에서 접속 자체가 안 됨 (해외 접속 차단·일시 장애). 다른 서버·다음 실행에서 다시 수집."""
-        return self.state == "접속불가"
+        return self.state in ("접속불가", PC_WAITING)
 
     @property
     def needs_other_server(self) -> bool:
         """다른 수집 서버에서 다시 수집해 볼 만한가 (접속불가, 또는 시간이 모자라 건너뜀)."""
-        return self.state in ("접속불가", "시간초과")
+        return not self.relayed and self.state in ("접속불가", "시간초과")

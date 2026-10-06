@@ -191,6 +191,23 @@ class Store:
         )
         return [_to_posting(r) for r in rows]
 
+    def postings_of(self, source_ids: list[str]) -> list[Posting]:
+        """이 소스들의 공고 전부 (상태와 무관). 한국 PC DB 를 본 DB 로 옮길 때 쓴다."""
+        marks = ",".join("?" for _ in source_ids)
+        rows = self.conn.execute(f"SELECT * FROM postings WHERE source_id IN ({marks})", source_ids) if source_ids else []
+        return [_to_posting(r) for r in rows]
+
+    def latest_runs(self, source_ids: list[str]) -> dict[str, sqlite3.Row]:
+        """소스마다 가장 최근 수집 기록 (source_runs 한 줄)."""
+        out: dict[str, sqlite3.Row] = {}
+        for sid in source_ids:
+            row = self.conn.execute(
+                "SELECT * FROM source_runs WHERE source_id = ? ORDER BY run_at DESC LIMIT 1", (sid,)
+            ).fetchone()
+            if row is not None:
+                out[sid] = row
+        return out
+
     def log_runs(self, results: list[SourceResult], now: datetime) -> None:
         ts = now.isoformat(timespec="seconds")
         self.conn.executemany(
