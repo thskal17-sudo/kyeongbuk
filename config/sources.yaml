@@ -1274,6 +1274,1049 @@ sources:
       org_fixed: true
       include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
 
+  # ─────────────────────────────── 경북교육청 공공도서관 (gbelib.kr, 공지사항)
+
+  # 경북교육청 도서관 누리집은 모두 같은 틀: /<도서관>/board/index.do?menu_idx=58&manage_idx=<번호>
+  # 제목 링크가 <a href="" keyValue="글번호"> 라서 글번호로 상세 주소를 만든다.
+  # 공지 대부분이 수강생·참가자 모집이라 강사·튜터·인력풀 글만 (강사 모집은 연 1~2회 '외부강사 공개모집' 으로 올라옴)
+
+  - id: gbelib_ad
+    name: 경북교육청 안동도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 안동시
+    collector: generic_board
+    url: "https://www.gbelib.kr/ad/board/index.do?menu_idx=58&manage_idx=388"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/ad/board/view.do?menu_idx=58&manage_idx=388&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 안동도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_adys
+    name: 경북교육청 안동도서관 용상분관 공지사항
+    org_type: 평생교육·도서관
+    district: 안동시
+    collector: generic_board
+    url: "https://www.gbelib.kr/adys/board/index.do?menu_idx=58&manage_idx=400"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/adys/board/view.do?menu_idx=58&manage_idx=400&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 안동도서관 용상분관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_adps
+    name: 경북교육청 안동도서관 풍산분관 공지사항
+    org_type: 평생교육·도서관
+    district: 안동시
+    collector: generic_board
+    url: "https://www.gbelib.kr/adps/board/index.do?menu_idx=58&manage_idx=421"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/adps/board/view.do?menu_idx=58&manage_idx=421&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 안동도서관 풍산분관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_gm
+    name: 경북교육청 구미도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 구미시
+    collector: generic_board
+    url: "https://www.gbelib.kr/gm/board/index.do?menu_idx=58&manage_idx=132"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/gm/board/view.do?menu_idx=58&manage_idx=132&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 구미도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_yi
+    name: 경북교육청 영일도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 포항시
+    collector: generic_board
+    url: "https://www.gbelib.kr/yi/board/index.do?menu_idx=58&manage_idx=43"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/yi/board/view.do?menu_idx=58&manage_idx=43&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 영일도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_od
+    name: 경북교육청 외동도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 경주시
+    collector: generic_board
+    url: "https://www.gbelib.kr/od/board/index.do?menu_idx=58&manage_idx=96"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/od/board/view.do?menu_idx=58&manage_idx=96&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 외동도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_ycgh
+    name: 경북교육청 금호도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 영천시
+    collector: generic_board
+    url: "https://www.gbelib.kr/ycgh/board/index.do?menu_idx=58&manage_idx=535"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/ycgh/board/view.do?menu_idx=58&manage_idx=535&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 금호도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_sj
+    name: 경북교육청 상주도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 상주시
+    collector: generic_board
+    url: "https://www.gbelib.kr/sj/board/index.do?menu_idx=58&manage_idx=147"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/sj/board/view.do?menu_idx=58&manage_idx=147&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 상주도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_sjhr
+    name: 경북교육청 상주도서관 화령분관 공지사항
+    org_type: 평생교육·도서관
+    district: 상주시
+    collector: generic_board
+    url: "https://www.gbelib.kr/sjhr/board/index.do?menu_idx=58&manage_idx=191"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/sjhr/board/view.do?menu_idx=58&manage_idx=191&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 상주도서관 화령분관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_jc
+    name: 경북교육청 점촌도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 문경시
+    collector: generic_board
+    url: "https://www.gbelib.kr/jc/board/index.do?menu_idx=58&manage_idx=198"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/jc/board/view.do?menu_idx=58&manage_idx=198&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 점촌도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_yj
+    name: 경북교육청 영주선비도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 영주시
+    collector: generic_board
+    url: "https://www.gbelib.kr/yj/board/index.do?menu_idx=58&manage_idx=333"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/yj/board/view.do?menu_idx=58&manage_idx=333&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 영주선비도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_yjpg
+    name: 경북교육청 영주선비도서관 풍기분관 공지사항
+    org_type: 평생교육·도서관
+    district: 영주시
+    collector: generic_board
+    url: "https://www.gbelib.kr/yjpg/board/index.do?menu_idx=58&manage_idx=338"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/yjpg/board/view.do?menu_idx=58&manage_idx=338&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 영주선비도서관 풍기분관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_us
+    name: 경북교육청 의성도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 의성군
+    collector: generic_board
+    url: "https://www.gbelib.kr/us/board/index.do?menu_idx=58&manage_idx=496"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/us/board/view.do?menu_idx=58&manage_idx=496&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 의성도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_cs
+    name: 경북교육청 청송도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 청송군
+    collector: generic_board
+    url: "https://www.gbelib.kr/cs/board/index.do?menu_idx=58&manage_idx=226"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/cs/board/view.do?menu_idx=58&manage_idx=226&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 청송도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_yy
+    name: 경북교육청 영양도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 영양군
+    collector: generic_board
+    url: "https://www.gbelib.kr/yy/board/index.do?menu_idx=58&manage_idx=435"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/yy/board/view.do?menu_idx=58&manage_idx=435&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 영양도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_yd
+    name: 경북교육청 영덕도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 영덕군
+    collector: generic_board
+    url: "https://www.gbelib.kr/yd/board/index.do?menu_idx=58&manage_idx=172"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/yd/board/view.do?menu_idx=58&manage_idx=172&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 영덕도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_cd
+    name: 경북교육청 청도도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 청도군
+    collector: generic_board
+    url: "https://www.gbelib.kr/cd/board/index.do?menu_idx=58&manage_idx=97"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/cd/board/view.do?menu_idx=58&manage_idx=97&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 청도도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_gr
+    name: 경북교육청 고령도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 고령군
+    collector: generic_board
+    url: "https://www.gbelib.kr/gr/board/index.do?menu_idx=58&manage_idx=491"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/gr/board/view.do?menu_idx=58&manage_idx=491&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 고령도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_sjl
+    name: 경북교육청 성주도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 성주군
+    collector: generic_board
+    url: "https://www.gbelib.kr/sjl/board/index.do?menu_idx=58&manage_idx=153"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/sjl/board/view.do?menu_idx=58&manage_idx=153&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 성주도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_cg
+    name: 경북교육청 칠곡도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 칠곡군
+    collector: generic_board
+    url: "https://www.gbelib.kr/cg/board/index.do?menu_idx=58&manage_idx=340"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/cg/board/view.do?menu_idx=58&manage_idx=340&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 칠곡도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_yc
+    name: 경북교육청 예천도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 예천군
+    collector: generic_board
+    url: "https://www.gbelib.kr/yc/board/index.do?menu_idx=58&manage_idx=305"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/yc/board/view.do?menu_idx=58&manage_idx=305&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 예천도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_bh
+    name: 경북교육청 봉화도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 봉화군
+    collector: generic_board
+    url: "https://www.gbelib.kr/bh/board/index.do?menu_idx=58&manage_idx=476"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/bh/board/view.do?menu_idx=58&manage_idx=476&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 봉화도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_uj
+    name: 경북교육청 울진도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 울진군
+    collector: generic_board
+    url: "https://www.gbelib.kr/uj/board/index.do?menu_idx=58&manage_idx=342"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/uj/board/view.do?menu_idx=58&manage_idx=342&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 울진도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_ul
+    name: 경북교육청 울릉도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 울릉군
+    collector: generic_board
+    url: "https://www.gbelib.kr/ul/board/index.do?menu_idx=58&manage_idx=528"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/ul/board/view.do?menu_idx=58&manage_idx=528&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청 울릉도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gbelib_geic
+    name: 경북교육청정보센터 공지사항
+    org_type: 평생교육·도서관
+    district: 경북전체
+    collector: generic_board
+    url: "https://www.gbelib.kr/geic/board/index.do?menu_idx=52&manage_idx=1"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://www.gbelib.kr/geic/board/view.do?menu_idx=52&manage_idx=1&board_idx={0}"
+      key_param: board_idx
+      org_name: 경상북도교육청정보센터
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # ─────────────────────────────── 시·군립 도서관
+
+  # <a href="javascript:selectBoardDetail('3820')"> → /lib/board/detail.tc?boardNo=
+  - id: gb_lib_notice
+    name: 경상북도도서관(도립) 공지사항
+    org_type: 평생교육·도서관
+    district: 경북전체
+    collector: generic_board
+    url: "https://www.gb.go.kr/lib/board/list.tc?mn=2376&mngNo=384&pageSeq=1613"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://www.gb.go.kr/lib/board/detail.tc?mn=2376&viewType=sub&mngNo=384&pageIndex=1&boardName=NOTICE&boardNo={0}&pageSeq=1613"
+      key_param: boardNo
+      org_name: 경상북도도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gyeongju_lib_notice
+    name: 경주시립도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 경주시
+    collector: generic_board
+    url: "https://library.gyeongju.go.kr/board/board.php?bbs_idx=1"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 경주시립도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: yeongju_lib_notice
+    name: 영주시립도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 영주시
+    collector: generic_board
+    url: "https://lib.yeongju.go.kr/board/board.php?bbs_idx=1"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 영주시립도서관
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # <a onclick="boardList.view('1051')">
+  - id: sangju_lib_notice
+    name: 상주시립도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 상주시
+    collector: generic_board
+    url: "https://www.sangju.go.kr/lib/page/10022/10002.tc"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://www.sangju.go.kr/lib/page/10022/10002.tc?pageDtlOrdrNo=1&importUrl=%2Fboard%2Fview.tc&boardMngNo=2&boardNo={0}"
+      key_param: boardNo
+      org_name: 상주시립도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # boardView('portal', 'list', '…', 'Y', 글번호, ptIdx, mId, '1')
+  - id: mungyeong_lib_notice
+    name: 문경시립도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 문경시
+    collector: generic_board
+    url: "https://www.gbmg.go.kr/portal/bbs/list.do?mId=0602050700&ptIdx=28"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://www.gbmg.go.kr/portal/bbs/view.do?mId={6}&bIdx={4}&ptIdx={5}"
+      key_param: bIdx
+      org_name: 문경시립도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: chilgok_lib_notice
+    name: 칠곡군립도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 칠곡군
+    collector: generic_board
+    url: "https://library.chilgok.go.kr/cg/board/index.do?menu_idx=435&manage_idx=1"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      page_param: viewPage
+      link_attr: keyvalue
+      link_template: "https://library.chilgok.go.kr/cg/board/view.do?menu_idx=435&manage_idx=1&board_idx={0}"
+      key_param: board_idx
+      org_name: 칠곡군립도서관
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: uiseong_lib_notice
+    name: 의성군립도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 의성군
+    collector: generic_board
+    url: "https://usc.go.kr/library/page.do?mnu_uid=785"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 의성군립도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: uljin_lib_notice
+    name: 울진군통합도서관 공지사항 (문화교실 강사 지원 등)
+    org_type: 평생교육·도서관
+    district: 울진군
+    collector: generic_board
+    url: "https://lib.uljin.go.kr/content/04community/01_01.php"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 울진군통합도서관
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # ─────────────────────────────── 평생학습관·평생교육 (추가)
+
+  - id: pohang_lll_orgs
+    name: 포항시 평생학습원 공지사항(유관기관·읍면동 평생학습)
+    org_type: 평생교육·도서관
+    district: 포항시
+    collector: generic_board
+    url: "https://lifetimeedu.pohang.go.kr/page/post_list.php?bbs_id=2272534044"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 포항시 평생학습원
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # <a onclick="viewBbs(6275)">
+  - id: gyeongju_lll_notice
+    name: 경주시 평생학습가족관 공지사항 (위촉강사 모집)
+    org_type: 평생교육·도서관
+    district: 경주시
+    collector: generic_board
+    url: "https://www.gyeongju.go.kr/gjlll/main/bbs/index.do?menu_idx=144&master_idx=1"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://www.gyeongju.go.kr/gjlll/main/bbs/view.do?menu_idx=144&master_idx=1&bbs_idx={0}"
+      key_param: bbs_idx
+      org_name: 경주시 평생학습가족관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gumi_lll_notice
+    name: 구미시 평생학습원 공지사항
+    org_type: 평생교육·도서관
+    district: 구미시
+    collector: generic_board
+    url: "https://www.gumi.go.kr/edu/board/post/list.do?bcIdx=361&mid=0701000000"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_attr: data-req-get-p-idx
+      link_template: "https://www.gumi.go.kr/edu/board/post/view.do?bcIdx=361&mid=0701010000&idx={0}"
+      key_param: idx
+      org_name: 구미시 평생학습원
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: sangju_lll_notice
+    name: 상주시 평생학습원 공지사항
+    org_type: 평생교육·도서관
+    district: 상주시
+    collector: generic_board
+    url: "https://www.sangju.go.kr/le/page/15652/11606.tc"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://www.sangju.go.kr/le/page/15652/11606.tc?pageDtlOrdrNo=1&importUrl=%2Fboard%2Fview.tc&boardMngNo=702&boardNo={0}"
+      key_param: boardNo
+      org_name: 상주시 평생학습원
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: mungyeong_lll_notice
+    name: 문경시 평생학습관 공지사항
+    org_type: 평생교육·도서관
+    district: 문경시
+    collector: generic_board
+    url: "https://www.gbmg.go.kr/edu/bbs/list.do?ptIdx=213&mId=0401000000"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://www.gbmg.go.kr/edu/bbs/view.do?mId={6}&bIdx={4}&ptIdx={5}"
+      key_param: bIdx
+      org_name: 문경시 평생학습관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: uiseong_lll_notice
+    name: 의성군 평생학습 게시판
+    org_type: 평생교육·도서관
+    district: 의성군
+    collector: generic_board
+    url: "https://www.usc.go.kr/lecture/page.do?mnu_uid=873"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 의성군 평생학습관
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gtlef_edu_notice
+    name: 경상북도인재평생교육재단 평생교육 공지사항
+    org_type: 평생교육·도서관
+    district: 경북전체
+    collector: generic_board
+    url: "https://www.gtlef.or.kr/edu/page.do?mnu_code=EDU0704"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 경상북도인재평생교육재단
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gtlef_notice
+    name: 경상북도인재평생교육재단 공지사항 (채용 등)
+    org_type: 평생교육·도서관
+    district: 경북전체
+    collector: generic_board
+    url: "https://www.gtlef.or.kr/main/page.do?mnu_code=MAIN0401"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 경상북도인재평생교육재단
+
+  # ─────────────────────────────── 시·군청 공지·고시 (읍면동 주민자치·평생학습 강사 모집이 올라오는 곳)
+
+  # <a data-action="/portal/saeol/gosi/view.do?notAncmtMgtNo=…" onclick="req.post(this)">
+  - id: pohang_gosi
+    name: 포항시청 고시/일반공고 (동 평생학습·주민자치 강사 모집 등)
+    org_type: 지자체
+    district: 포항시
+    collector: generic_board
+    url: "https://www.pohang.go.kr/portal/saeol/gosi/list.do?mid=0202010000"
+    pages: 2
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      link_attr: data-action
+      key_param: notAncmtMgtNo
+      org_prefix: 포항시
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: bonghwa_notice
+    name: 봉화군청 공지사항
+    org_type: 지자체
+    district: 봉화군
+    collector: generic_board
+    url: "https://www.bonghwa.go.kr/portal/board/post/list.do?bcIdx=100&mid=0201010000"
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      link_attr: data-req-get-p-idx
+      link_template: "https://www.bonghwa.go.kr/portal/board/post/view.do?bcIdx=100&mid=0201010000&idx={0}"
+      key_param: idx
+      org_prefix: 봉화군
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: gyeongju_gosi
+    name: 경주시청 고시/공고 (동 주민자치센터 강사 모집 등)
+    org_type: 지자체
+    district: 경주시
+    collector: generic_board
+    url: "https://www.gyeongju.go.kr/open_content/ko/page.do?mnu_uid=423"
+    pages: 2
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      org_prefix: 경주시
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: andong_gosi
+    name: 안동시청 고시공고(전체)
+    org_type: 지자체
+    district: 안동시
+    collector: generic_board
+    url: "https://www.andong.go.kr/portal/saeol/gosi/list.do?mId=0401020100"
+    pages: 2
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      org_prefix: 안동시
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: yeongju_gosi
+    name: 영주시청 고시/공고
+    org_type: 지자체
+    district: 영주시
+    collector: generic_board
+    url: "https://www.yeongju.go.kr/open_content/main/page.do?mnu_uid=10619&boardType=notice"
+    pages: 2
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      org_prefix: 영주시
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: uiseong_notice
+    name: 의성군청 공지사항
+    org_type: 지자체
+    district: 의성군
+    collector: generic_board
+    url: "https://www.usc.go.kr/ko/page.do?mnu_uid=156"
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      org_prefix: 의성군
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  - id: yecheon_notice
+    name: 예천군청 공지사항
+    org_type: 지자체
+    district: 예천군
+    collector: generic_board
+    url: "https://www.ycg.kr/open.content/ko/administrative/news/notice/"
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: true
+    options:
+      org_prefix: 예천군
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # ─────────────────────────────── 복지관·사회복지 (추가)
+
+  - id: gbcsw_notice
+    name: 경상북도사회복지협의회 공지사항 (복지시설 채용 홍보)
+    org_type: 복지관
+    district: 경북전체
+    collector: generic_board
+    url: "https://www.gbcsw.or.kr/content/04welf/01_01.php"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 경상북도사회복지협의회
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후, 인력풀]
+
+  # <a href="javascript:fn_egov_select('글키')">
+  - id: pohang_senior_notice
+    name: 포항시노인복지회관 공지사항 (평생교육 강사 모집)
+    org_type: 복지관
+    district: 포항시
+    collector: generic_board
+    url: "https://www.phsisul.org/sisul_19/sub/notice.do"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_template: "https://www.phsisul.org/sisul_19/sub/notice_view.do?prc=read&prcValue={0}"
+      key_param: prcValue
+      org_name: 포항시노인복지회관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후, 인력풀]
+
+  - id: haksan_notice
+    name: 학산종합사회복지관 공지사항
+    org_type: 복지관
+    district: 포항시
+    collector: generic_board
+    url: "http://ehaksan.or.kr/board_notice01/board_list.asp"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 학산종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후, 인력풀]
+
+  - id: gumi_senior_notice
+    name: 구미시노인종합복지관 공지사항 (어르신교육 강사 등)
+    org_type: 복지관
+    district: 구미시
+    collector: generic_board
+    url: "https://www.gumi.go.kr/silver/board/post/list.do?bcIdx=1&mid=0501000000"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      link_attr: data-req-get-p-idx
+      link_template: "https://www.gumi.go.kr/silver/board/post/view.do?bcIdx=1&mid=0501000000&idx={0}"
+      key_param: idx
+      org_name: 구미시노인종합복지관
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후, 인력풀]
+
+  - id: kumibokji_notice
+    name: 구미종합사회복지관 공지사항
+    org_type: 복지관
+    district: 구미시
+    collector: generic_board
+    url: "http://www.kumibokji.or.kr/p501"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 구미종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후, 인력풀]
+
+  - id: ygcw_notice
+    name: 경주시종합사회복지관 공지사항 (건강종합센터 강사 등)
+    org_type: 복지관
+    district: 경주시
+    collector: generic_board
+    url: "http://ygcw.or.kr/sub/sub05_01.php"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 경주시종합사회복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후, 인력풀]
+
+  - id: sangju_senior_notice
+    name: 상주시노인종합복지관 공지사항
+    org_type: 복지관
+    district: 상주시
+    collector: generic_board
+    url: "https://www.xn--o80bx1tj3c24k.com/bbs/board.php?bo_table=notice"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 상주시노인종합복지관
+      org_fixed: true
+      include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후, 인력풀]
+
+  - id: sangju_senior_recruit
+    name: 상주시노인종합복지관 채용정보
+    org_type: 복지관
+    district: 상주시
+    collector: generic_board
+    url: "https://www.xn--o80bx1tj3c24k.com/bbs/board.php?bo_table=recruit"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 상주시노인종합복지관
+      org_fixed: true
+
+  - id: yu_lifelong_notice
+    name: 영남대 글로벌평생교육원 공지사항 (강좌 제안·강사 모집)
+    org_type: 평생교육·도서관
+    district: 경산시
+    collector: generic_board
+    url: "https://www.yu.ac.kr/yulife/news/notice.do"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: true
+    options:
+      org_name: 영남대학교 글로벌평생교육원
+      org_fixed: true
+      include: [강사, 튜터, 인력풀, 개설 희망, 강좌 제안, 강의 제안, 강좌제안]
+
   # ─────────────────────────────── 청소년·여성·복지
 
   - id: gb1388_recruit
