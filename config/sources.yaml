@@ -2431,6 +2431,82 @@ sources:
       org_name: 안동시립도서관
       include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
 
+  # 해외에서는 404. 글 주소는 board.php?mode=view&bbs_idx=1&no=글번호
+  - id: gimcheon_lib_notice
+    name: 김천시립도서관 공지사항 (문화강좌 외래강사 모집)
+    org_type: 평생교육·도서관
+    district: 김천시
+    collector: generic_board
+    url: "https://www.gcl.go.kr/board/board.php?bbs_idx=1&cate=1"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: false
+    options:
+      korea_only: true
+      key_param: no
+      org_name: 김천시립도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # 해외에서는 www.gbgs.go.kr/lib 로 넘긴 뒤 웹 방화벽 차단. 상세는 경산시 다른 .tc 게시판 틀
+  - id: gyeongsan_lib_notice
+    name: 경산시립도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 경산시
+    collector: generic_board
+    url: "https://lib.gbgs.go.kr/board/list.tc?mn=1057&mngNo=76&pageSeq=600"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: false
+    options:
+      korea_only: true
+      link_template: "https://lib.gbgs.go.kr/board/detail.tc?mn=1057&mngNo=76&pageSeq=600&boardNo={0}"
+      key_param: boardNo
+      org_name: 경산시립도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # 해외에서는 접속 시간 초과. 글 주소는 bdNoticeView.do?lb_idx=글번호
+  - id: goryeong_lib_notice
+    name: 고령군 다산도서관 공지사항
+    org_type: 평생교육·도서관
+    district: 고령군
+    collector: generic_board
+    url: "http://lib.goryeong.go.kr/bdnotice/bdNoticeList.do"
+    pages: 1
+    keyword_filter: true
+    phase: 3
+    enabled: true
+    verified: false
+    options:
+      korea_only: true
+      key_param: lb_idx
+      org_name: 고령군 다산도서관
+      org_fixed: true
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
+  # 해외에서는 웹 방화벽 차단. 글 주소는 boardView.do?BRD_ID=1019&BOARD_IDX=글번호&IDX=152
+  - id: goryeong_notice
+    name: 고령군청 공지사항
+    org_type: 지자체
+    district: 고령군
+    collector: generic_board
+    url: "https://www.goryeong.go.kr/kor/boardList.do?BRD_ID=1019&IDX=152"
+    pages: 1
+    keyword_filter: true
+    phase: 2
+    enabled: true
+    verified: false
+    options:
+      korea_only: true
+      key_param: BOARD_IDX
+      org_prefix: 고령군
+      include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
+
   - id: gyeongsan_lll_notice
     name: 경산시 평생학습관 공지사항
     org_type: 평생교육·도서관
