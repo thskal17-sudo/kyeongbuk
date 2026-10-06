@@ -37,6 +37,7 @@ SNIPPETS: list[str] = []
 RAW = 0
 RAW_FROM = ""
 GREP: re.Pattern | None = None
+GREP_LIMIT = 8
 FOLLOW_JS = False
 AROUND: list[str] = ["접수기간", "모집기간", "신청기간", "마감"]
 FORM_POST: tuple[str, dict[str, str]] | None = None  # (폼 셀렉터, 추가 값): GET 후 폼을 POST 한 응답을 본다
@@ -184,7 +185,8 @@ def js_defs(soup, code: str) -> list[str]:
 BOARD_LINK = re.compile(r"공지|채용|모집|강사|알림|소식|notice|board|bbs|Board|Bbs", re.I)
 
 
-def grep_report(label: str, text: str, limit: int = 8) -> None:
+def grep_report(label: str, text: str, limit: int | None = None) -> None:
+    limit = limit or GREP_LIMIT
     hits = list(GREP.finditer(text))
     if hits:
         print(f"  grep {label}: {len(hits)} hits")
@@ -317,6 +319,7 @@ def main() -> int:
     parser.add_argument("--raw-from", default="", help="--raw 출력을 이 글자가 처음 나오는 곳부터 시작")
     parser.add_argument("--grep", default=None, help="--parse 에서 HTML 에 이 정규식이 나오는 곳을 출력")
     parser.add_argument("--follow-js", action="store_true", help="--grep 을 같은 사이트의 외부 JS 파일에도 적용")
+    parser.add_argument("--grep-limit", type=int, default=8, help="--grep 에서 보여 줄 최대 건수")
     parser.add_argument("--browser-ua", action="store_true", help="봇 표시 없는 일반 브라우저 User-Agent 사용")
     parser.add_argument("--legacy-tls", action="store_true", help="--url 호스트에 구형 TLS 허용")
     parser.add_argument("--short-headers", action="store_true", help="--url 호스트에 짧은 요청 머리글 (새올 400 대비)")
@@ -325,7 +328,8 @@ def main() -> int:
     parser.add_argument("--attach", action="store_true", help="--url(상세 페이지)의 첨부 공고문을 내려받아 글자와 마감일 확인")
     parser.add_argument("--attach-template", default=None, help="--attach 에서 쓸 첨부 주소 틀 (sources.yaml 의 attachment_template)")
     args = parser.parse_args()
-    global RAW, RAW_FROM, GREP, FOLLOW_JS, FORM_POST
+    global RAW, RAW_FROM, GREP, FOLLOW_JS, FORM_POST, GREP_LIMIT
+    GREP_LIMIT = args.grep_limit
     RAW, RAW_FROM = args.raw, args.raw_from
     if args.form_post:
         from urllib.parse import parse_qsl
