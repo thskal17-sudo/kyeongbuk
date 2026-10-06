@@ -181,11 +181,18 @@ GitHub 예약 실행(cron)은 저장소의 **기본 브랜치**에 있는 워크
    - [Python 3.12](https://www.python.org/downloads/windows/): 설치 첫 화면에서 **Add python.exe to PATH** 체크 →
      **Customize installation → Install Python for all users** 체크 (실행기를 서비스로 돌릴 때 필요)
    - [Git for Windows](https://git-scm.com/download/win): 기본 설정 그대로 설치
-2. **실행기 등록**: 저장소 **Settings → Actions → Runners → New self-hosted runner** → **Windows / x64** 선택.
-   화면에 나오는 명령을 PowerShell(관리자)에 차례로 붙여 넣습니다. `config.cmd` 단계에서 묻는 것은:
-   - runner group, runner name, work folder: 그냥 Enter
-   - **additional labels: `korea`** 입력 (꼭 이 이름. 매일 작업이 이 라벨이 붙은 실행기를 찾습니다)
-   - **run as service: `Y`** (PC 를 켜면 실행기가 자동으로 켜짐)
+2. **실행기 등록 (설치 스크립트)**:
+   1. 저장소 **Settings → Actions → Runners → New self-hosted runner** 를 열고, 'Configure' 칸 명령의 `--token` 뒤 값을 복사합니다 (1시간 동안 유효).
+   2. 이 저장소의 [`scripts/install_korea_runner.ps1`](scripts/install_korea_runner.ps1) 을 PC 에 받습니다 (파일 화면 오른쪽 위 ⬇ 내려받기).
+   3. **PowerShell 을 '관리자 권한으로 실행'** 하고, 받은 폴더에서:
+      ```powershell
+      Set-ExecutionPolicy -Scope Process Bypass
+      .\install_korea_runner.ps1 -Token <복사한 토큰> -NoSleep
+      ```
+      Python·Git 설치를 확인하고, 실행기를 `C:\actions-runner-kyeongbuk` 에 받아 **라벨 `korea`, 서비스(자동 시작)** 로 등록합니다.
+      `-NoSleep` 은 전원 연결 상태에서 절전 모드를 끕니다 (빼도 됨).
+
+   스크립트 대신 손으로 하려면 New self-hosted runner 화면의 명령을 그대로 붙여 넣되, labels 에 **`korea`**, run as service 에 **`Y`** 를 입력합니다.
 3. **확인**: Settings → Actions → Runners 에 실행기가 **Idle**(초록 점)로 보이면 끝입니다.
    **Actions → 한국 PC 수집 (해외 차단 사이트) → Run workflow** 로 한 번 돌려 보세요.
 4. **PC 설정**: 05:47 에 절전·최대 절전 상태면 실행되지 않습니다. 전원 옵션에서 절전 모드를 끄거나,

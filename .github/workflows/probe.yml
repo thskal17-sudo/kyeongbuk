@@ -36,19 +36,22 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python -m pip install -q -r requirements.txt
+      - run: |
+          PY=$(command -v python || command -v python3 || command -v py)
+          echo "PY=$PY" >> "$GITHUB_ENV"
+          "$PY" -m pip install -q -r requirements.txt
       # set -f: URL 의 ? 등이 파일 이름으로 확장되지 않게 함
       - if: github.event_name == 'push'
-        run: python scripts/probe.py --no-reach --parse --url-file scripts/probe_urls.txt
+        run: '"$PY" scripts/probe.py --no-reach --parse --url-file scripts/probe_urls.txt'
         env:
           PYTHONUNBUFFERED: "1"
       - if: github.event_name == 'workflow_dispatch' && github.event.inputs.check == ''
-        run: set -f; python scripts/probe.py $PROBE_ARGS
+        run: set -f; "$PY" scripts/probe.py $PROBE_ARGS
         env:
           PYTHONUNBUFFERED: "1"
           PROBE_ARGS: ${{ github.event.inputs.args }}
       - if: github.event_name == 'workflow_dispatch' && github.event.inputs.check != ''
-        run: python -m gyeongbuk_jobs check-source $CHECK_IDS
+        run: '"$PY" -m gyeongbuk_jobs check-source $CHECK_IDS'
         env:
           PYTHONPATH: src
           PYTHONUNBUFFERED: "1"
