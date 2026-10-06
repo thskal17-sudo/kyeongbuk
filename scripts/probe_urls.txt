@@ -1,24 +1,9 @@
-# 상세 주소 틀 확인
-https://www.gbelib.kr/ad/board/view.do?menu_idx=58&manage_idx=388&board_idx=291996
-https://www.gyeongju.go.kr/gjlll/main/bbs/view.do?menu_idx=144&master_idx=1&bbs_idx=6275
-https://www.sangju.go.kr/le/page/15652/11606.tc?pageDtlOrdrNo=1&importUrl=%2Fboard%2Fview.tc&boardMngNo=702&boardNo=2000144199
-https://www.gbmg.go.kr/edu/bbs/view.do?mId=0401000000&bIdx=216426&ptIdx=213
-https://www.gbmg.go.kr/portal/bbs/view.do?mId=0602050700&bIdx=218367&ptIdx=28
-https://www.sangju.go.kr/lib/page/10022/10002.tc?pageDtlOrdrNo=1&importUrl=%2Fboard%2Fview.tc&boardMngNo=2&boardNo=1051
-https://www.gb.go.kr/lib/board/detail.tc?mn=2376&viewType=sub&mngNo=384&pageIndex=1&boardName=NOTICE&boardNo=3820&pageSeq=1613
-# 목록 (두 번째 확인)
-https://www.gbelib.kr/gm/board/index.do?menu_idx=58&manage_idx=132
-https://www.gbelib.kr/gr/board/index.do?menu_idx=58&manage_idx=491
-https://www.gbgs.go.kr/lib/
-https://www.bonghwa.go.kr/portal/board/post/list.do?bcIdx=100&mid=0201010000
-https://www.uljin.go.kr/index.uljin?menuCd=DOM_000001604004000000
-https://www.uljin.go.kr/index.uljin?menuCd=DOM_000000103002001000
-https://www.yu.ac.kr/yulife/news/notice.do
-https://wise.dongguk.ac.kr/article/teachnotice/list
-https://www.gbcsw.or.kr/content/04welf/01_01.php
-https://www.phsisul.org/sisul_19/sub/notice.do
-http://ehaksan.or.kr/board_notice01/board_list.asp
-http://ygcw.or.kr/sub/sub05_01.php
-https://adrehab.or.kr/new/bbs/board.php?bo_table=notice
-https://www.xn--o80bx1tj3c24k.com/bbs/board.php?bo_table=notice
-https://www.xn--o80bx1tj3c24k.com/bbs/board.php?bo_table=recruit
+# 남은 도서관·평생학습 후보
+https://www.gcl.go.kr/board/board.php?bbs_idx=1&cate=1
+https://www.gcl.go.kr/board/board.php?bbs_idx=1
+https://lib.goryeong.go.kr/bdnotice/bdNoticeList.do
+http://lib.goryeong.go.kr/bdnotice/bdNoticeList.do
+https://www.goryeong.go.kr/kor/boardList.do?BRD_ID=1019&IDX=152
+https://lib.gbgs.go.kr/board/list.tc?mn=1057&mngNo=76&pageSeq=600
+https://www.ulleung.go.kr/edu/main.do
+https://www.yc.go.kr/edu/portal/contents.do?mId=0404010000
