@@ -1,3 +1,45 @@
-# 안동시 게시판 상세 주소 (data-action + mId)
-https://www.andong.go.kr/edu/bbs/view.do?bIdx=780485&ptIdx=752&mId=0501000000
-https://www.andong.go.kr/portal/bbs/view.do?bIdx=781560&ptIdx=76&mId=0401070000
+# 경북교육청 도서관 공지사항 (gbelib.kr, menu_idx=58)
+https://www.gbelib.kr/gm/board/index.do?menu_idx=58&manage_idx=132
+https://www.gbelib.kr/ad/board/index.do?menu_idx=58&manage_idx=388
+https://www.gbelib.kr/adys/board/index.do?menu_idx=58&manage_idx=400
+https://www.gbelib.kr/us/board/index.do?menu_idx=58&manage_idx=496
+https://www.gbelib.kr/yd/board/index.do?menu_idx=58&manage_idx=172
+https://www.gbelib.kr/yy/board/index.do?menu_idx=58&manage_idx=435
+https://www.gbelib.kr/od/board/index.do?menu_idx=58&manage_idx=96
+https://www.gbelib.kr/ycgh/board/index.do?menu_idx=58&manage_idx=535
+https://www.gbelib.kr/yi/board/index.do?menu_idx=58&manage_idx=43
+https://www.gbelib.kr/gr/board/index.do?menu_idx=58&manage_idx=490
+https://www.gbelib.kr/cg/board/index.do?menu_idx=58&manage_idx=340
+https://www.gbelib.kr/yc/board/index.do?menu_idx=58&manage_idx=305
+https://www.gbelib.kr/sjhr/board/index.do?menu_idx=58&manage_idx=191
+https://www.gbelib.kr/yj/board/index.do?menu_idx=58&manage_idx=333
+https://www.gbelib.kr/yjpg/board/index.do?menu_idx=58&manage_idx=338
+https://www.gbelib.kr/cd/board/index.do?menu_idx=58&manage_idx=97
+https://www.gbelib.kr/geic/board/index.do?menu_idx=52&manage_idx=1
+https://www.gbelib.kr/gbelib/board/index.do?menu_idx=128&manage_idx=521
+# 공지사항 번호를 모르는 도서관 첫 화면
+https://www.gbelib.kr/sj/index.do
+https://www.gbelib.kr/bh/index.do
+https://www.gbelib.kr/uj/index.do
+https://www.gbelib.kr/cs/index.do
+https://www.gbelib.kr/sjl/index.do
+https://www.gbelib.kr/jc/index.do
+https://www.gbelib.kr/ul/index.do
+https://www.gbelib.kr/adps/index.do
+# 시·군립 도서관
+https://phlib.pohang.go.kr/phlib/board/index.do?menu_idx=33&manage_idx=312
+https://library.gyeongju.go.kr/board/board.php?bbs_idx=1
+https://www.gcl.go.kr/board/board.php?bbs_idx=1
+https://lib.yeongju.go.kr/board/board.php?bbs_idx=1
+https://www.sangju.go.kr/lib/page/10022/10002.tc
+https://www.gbmg.go.kr/portal/bbs/list.do?mId=0602050700&ptIdx=28
+https://library.chilgok.go.kr/cg/board/index.do?menu_idx=435&manage_idx=1
+https://usc.go.kr/library/page.do?mnu_uid=785
+https://www.usc.go.kr/lib/tabBoard/list.tc?mn=1138&pageSeq=1102
+https://lib.uljin.go.kr/content/04community/01_01.php
+https://lib.uljin.go.kr/content/04community/01_0103.php
+https://www.gb.go.kr/lib/board/list.tc?mn=2376&mngNo=384&pageSeq=1613
+http://lib.gbgs.go.kr/
+http://www.yclib.go.kr/homepage/
+https://uljin.go.kr/board/list.uljin?boardId=BBS_0000053&contentsSid=78&menuCd=DOM_000000103002011000
+https://www.andong.go.kr/edu/lecturerBank/list.do?mId=0402020000
