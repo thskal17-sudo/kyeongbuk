@@ -11,10 +11,11 @@
 # 실행 (PowerShell 을 '관리자 권한으로 실행' 해서)
 #   Set-ExecutionPolicy -Scope Process Bypass
 #   .\install_korea_runner.ps1 -Token <복사한 토큰>
+# 이미 등록된 PC 에서 설정만 고치려면 토큰 없이 다시 실행하면 된다
 #
 # 지우기: C:\actions-runner-kyeongbuk 에서  .\config.cmd remove --token <Remove 토큰>
 param(
-    [Parameter(Mandatory = $true)][string]$Token,
+    [string]$Token = "",  # 처음 등록할 때만 필요. 이미 등록된 PC 에서 다시 실행하면 설정만 고친다
     [string]$Repo = "https://github.com/thskal17-sudo/kyeongbuk",
     [string]$Branch = "claude/upbeat-wozniak-hv3xh9",
     [string]$Dir = "C:\actions-runner-kyeongbuk",
@@ -63,6 +64,17 @@ if ($pyDir -like "*\Users\*") {
     Write-Host "서비스 계정이 $pyDir 를 읽을 수 있게 했습니다."
 }
 
+# 서비스 계정의 PATH(시스템 PATH)에 Python 과 Git 의 bash 폴더를 넣는다. 작업(korea.yml)이 bash 와 python 을 PATH 에서 찾기 때문
+$gitRoot = Split-Path $gitDir
+$need = @($pyDir, "$pyDir\Scripts", $gitDir, "$gitRoot\bin") | Where-Object { Test-Path $_ }
+$machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+$parts = $machinePath -split ";" | Where-Object { $_ }
+$add = $need | Where-Object { $d = $_.TrimEnd("\"); -not ($parts | Where-Object { $_.TrimEnd("\") -ieq $d }) }
+if ($add) {
+    [Environment]::SetEnvironmentVariable("Path", (($parts + $add) -join ";"), "Machine")
+    Write-Host "시스템 PATH 에 추가: $($add -join ', ')"
+}
+
 # 수집에 필요한 파이썬 패키지를 미리 설치해 둔다 (작업 때는 확인만 하고 지나감)
 $req = Join-Path $env:TEMP "kyeongbuk-requirements.txt"
 Invoke-WebRequest "https://raw.githubusercontent.com/thskal17-sudo/kyeongbuk/$Branch/requirements.txt" -OutFile $req
@@ -82,14 +94,19 @@ if (-not (Test-Path ".\config.cmd")) {
     Remove-Item $zip
 }
 
-# 실행기가 작업에 넘겨 줄 PATH (.path 파일): 서비스 계정의 PATH 에는 사용자가 깐 Python 이 없으므로 직접 적는다
-$machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
-Set-Content -Path ".\.path" -Value "$pyDir;$pyDir\Scripts;$gitDir;$(Split-Path $gitDir)\bin;$machinePath" -Encoding ASCII
+if (Test-Path ".\.path") { Remove-Item ".\.path" }  # 예전 판이 만든 파일. 시스템 PATH 를 쓰므로 필요 없음
 
-# 3. 등록: 라벨 korea, 서비스로 실행 (PC 를 켜면 자동 시작)
-& .\config.cmd --unattended --url $Repo --token $Token --name "$env:COMPUTERNAME-korea" `
-    --labels korea --work _work --runasservice --replace
-if ($LASTEXITCODE -ne 0) { Fail "실행기 등록에 실패했습니다. 토큰이 만료(1시간)됐으면 New self-hosted runner 화면을 새로 열어 다시 복사하세요." }
+# 3. 등록: 라벨 korea, 서비스로 실행 (PC 를 켜면 자동 시작). 이미 등록돼 있으면 서비스만 다시 시작해 바뀐 PATH 를 반영
+if (Test-Path ".\.runner") {
+    $svc = Get-Service "actions.runner.*" -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($svc) { Restart-Service $svc.Name; Write-Host "이미 등록된 실행기입니다. 서비스($($svc.Name))를 다시 시작했습니다." }
+    else { Write-Host "[주의] 실행기는 등록돼 있는데 서비스가 없습니다. PC 를 다시 시작해 보세요." -ForegroundColor Yellow }
+} else {
+    if (-not $Token) { Fail "처음 등록할 때는 -Token <토큰> 이 필요합니다 (Settings → Actions → Runners → New self-hosted runner)." }
+    & .\config.cmd --unattended --url $Repo --token $Token --name "$env:COMPUTERNAME-korea" `
+        --labels korea --work _work --runasservice --replace
+    if ($LASTEXITCODE -ne 0) { Fail "실행기 등록에 실패했습니다. 토큰이 만료(1시간)됐으면 New self-hosted runner 화면을 새로 열어 다시 복사하세요." }
+}
 
 # 4. 절전 끄기 (선택)
 if ($NoSleep) {

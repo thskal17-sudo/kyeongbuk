@@ -190,8 +190,8 @@ GitHub 예약 실행(cron)은 저장소의 **기본 브랜치**에 있는 워크
       Set-ExecutionPolicy -Scope Process Bypass
       .\install_korea_runner.ps1 -Token <복사한 토큰> -NoSleep
       ```
-      Python·Git 설치를 확인하고, 실행기를 `C:\actions-runner-kyeongbuk` 에 받아 **라벨 `korea`, 서비스(자동 시작)** 로 등록합니다.
-      `-NoSleep` 은 전원 연결 상태에서 절전 모드를 끕니다 (빼도 됨).
+      Python·Git 을 찾아 시스템 PATH 에 등록하고, 실행기를 `C:\actions-runner-kyeongbuk` 에 받아 **라벨 `korea`, 서비스(자동 시작)** 로 등록합니다.
+      `-NoSleep` 은 전원 연결 상태에서 절전 모드를 끕니다 (빼도 됨). 이미 등록된 PC 에서는 토큰 없이 다시 실행해도 됩니다 (설정만 고치고 서비스를 재시작).
 
    스크립트 대신 손으로 하려면 New self-hosted runner 화면의 명령을 그대로 붙여 넣되, labels 에 **`korea`**, run as service 에 **`Y`** 를 입력합니다.
 3. **확인**: Settings → Actions → Runners 에 실행기가 **Idle**(초록 점)로 보이면 끝입니다.
