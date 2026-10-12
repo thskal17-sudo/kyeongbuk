@@ -179,8 +179,8 @@ GitHub 예약 실행(cron)은 저장소의 **기본 브랜치**에 있는 워크
 (사무실 PC 등. Windows 10/11 기준, Mac·Linux 도 됨). 설치하지 않아도 나머지 132곳은 그대로 수집되고, 메일에 '한국 PC 미실행' 으로만 표시됩니다.
 
 1. **프로그램 두 개 설치** (이미 있으면 건너뜀)
-   - [Python 3.12](https://www.python.org/downloads/windows/): 설치 첫 화면에서 **Add python.exe to PATH** 체크 →
-     **Customize installation → Install Python for all users** 체크 (실행기를 서비스로 돌릴 때 필요)
+   - [Python 3.12](https://www.python.org/downloads/windows/): 설치 첫 화면에서 **Add python.exe to PATH** 체크
+     (어디에 설치했든 스크립트가 찾아서 실행기에 알려 줍니다)
    - [Git for Windows](https://git-scm.com/download/win): 기본 설정 그대로 설치
 2. **실행기 등록 (설치 스크립트)**:
    1. 저장소 **Settings → Actions → Runners → New self-hosted runner** 를 열고, 'Configure' 칸 명령의 `--token` 뒤 값을 복사합니다 (1시간 동안 유효).
