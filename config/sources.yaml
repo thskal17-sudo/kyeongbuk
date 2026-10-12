@@ -2358,6 +2358,7 @@ sources:
       org_prefix: 김천시
       include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
 
+  # 한국 PC 확인(2026-10-12): '게시판이 삭제되었거나 존재하지 않습니다' — 일자리포털이 없어짐. 읍면동 통합 공지로 대신
   - id: gimcheon_jobportal
     name: 김천시 일자리포털 채용정보
     org_type: 지자체
@@ -2367,7 +2368,7 @@ sources:
     pages: 1
     keyword_filter: true
     phase: 2
-    enabled: true
+    enabled: false
     verified: false
     options:
       korea_only: true
@@ -2431,32 +2432,33 @@ sources:
       org_name: 안동시립도서관
       include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
 
-  # 해외에서는 404. 글 주소는 board.php?mode=view&bbs_idx=1&no=글번호
+  # 한국 PC 확인(2026-10-12): .tc 게시판. <a onclick="boardList.view('8152')"> → ?boardNo=8152&boardMngNo=2&importUrl=/board/view.tc
   - id: gimcheon_lib_notice
     name: 김천시립도서관 공지사항 (문화강좌 외래강사 모집)
     org_type: 평생교육·도서관
     district: 김천시
     collector: generic_board
-    url: "https://www.gcl.go.kr/board/board.php?bbs_idx=1&cate=1"
+    url: "https://www.gcl.go.kr/page/10102/10054.tc"
     pages: 1
     keyword_filter: true
     phase: 3
     enabled: true
-    verified: false
+    verified: true
     options:
       korea_only: true
-      key_param: no
+      link_template: "https://www.gcl.go.kr/page/10102/10054.tc?pageDtlOrdrNo=1&boardNo={0}&boardMngNo=2&importUrl=%2Fboard%2Fview.tc"
+      key_param: boardNo
       org_name: 김천시립도서관
       org_fixed: true
       include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
 
-  # 해외에서는 www.gbgs.go.kr/lib 로 넘긴 뒤 웹 방화벽 차단. 상세는 경산시 다른 .tc 게시판 틀
+  # 한국 PC 확인(2026-10-12): lib.gbgs.go.kr 은 www.gbgs.go.kr/lib 로 넘김(해외는 웹 방화벽 차단). 공지사항 mngNo=104, 행사안내 mngNo=76
   - id: gyeongsan_lib_notice
     name: 경산시립도서관 공지사항
     org_type: 평생교육·도서관
     district: 경산시
     collector: generic_board
-    url: "https://lib.gbgs.go.kr/board/list.tc?mn=1057&mngNo=76&pageSeq=600"
+    url: "https://www.gbgs.go.kr/lib/board/list.tc?mn=1059&mngNo=104&pageSeq=604"
     pages: 1
     keyword_filter: true
     phase: 3
@@ -2464,7 +2466,7 @@ sources:
     verified: false
     options:
       korea_only: true
-      link_template: "https://lib.gbgs.go.kr/board/detail.tc?mn=1057&mngNo=76&pageSeq=600&boardNo={0}"
+      link_template: "https://www.gbgs.go.kr/lib/board/detail.tc?mn=1059&mngNo=104&pageIndex=1&boardNo={0}&pageSeq=604"
       key_param: boardNo
       org_name: 경산시립도서관
       org_fixed: true
@@ -2526,6 +2528,7 @@ sources:
       org_fixed: true
       include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
 
+  # 한국 PC 확인(2026-10-12): 청도군 누리집 개편 중(첫 화면이 안내문뿐, 하위 주소 전부 404). 개편 뒤 새 주소 확인 필요
   - id: cheongdo_lll_notice
     name: 청도군 평생학습센터 공지사항
     org_type: 평생교육·도서관
@@ -2535,7 +2538,7 @@ sources:
     pages: 1
     keyword_filter: true
     phase: 3
-    enabled: true
+    enabled: false
     verified: false
     options:
       korea_only: true
@@ -2543,6 +2546,7 @@ sources:
       org_fixed: true
       include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
 
+  # 한국 PC 확인(2026-10-12): public.chilgok.go.kr 이 한국에서도 응답 없음 (서버 중단). 새 주소를 찾으면 다시 켬
   - id: chilgok_culture_notice
     name: 칠곡군 교육문화회관 공지사항
     org_type: 평생교육·도서관
@@ -2552,7 +2556,7 @@ sources:
     pages: 1
     keyword_filter: true
     phase: 3
-    enabled: true
+    enabled: false
     verified: false
     options:
       korea_only: true
@@ -2560,23 +2564,26 @@ sources:
       org_fixed: true
       include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
 
+  # 한국 PC 확인(2026-10-12): 기본 화면(webjine)은 표가 아니라 boardTheme=common(표 화면)으로. 글 주소 ?mode=read&idx=글번호
   - id: pohang_culture_notice
     name: 포항문화원 공지사항 (문화학교 강사)
     org_type: 평생교육·도서관
     district: 포항시
     collector: generic_board
-    url: "http://www.phcc.or.kr/phcc/participate/notice/"
+    url: "http://www.phcc.or.kr/phcc/participate/notice/?boardTheme=common"
     pages: 1
     keyword_filter: true
     phase: 3
     enabled: true
-    verified: false
+    verified: true
     options:
       korea_only: true
+      key_param: idx
       org_name: 포항문화원
       org_fixed: true
       include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
 
+  # 한국 PC 확인(2026-10-12): 표 대신 <ul class="bbstb_tr tbody"> 행. 글 주소 /Notice?...&mode=detl&nttId=NTT_…
   - id: gucf_notice
     name: 구미문화재단 공지사항
     org_type: 평생교육·도서관
@@ -2587,9 +2594,13 @@ sources:
     keyword_filter: true
     phase: 3
     enabled: true
-    verified: false
+    verified: true
     options:
       korea_only: true
+      row_selector: ul.bbstb_tr.tbody
+      title_selector: li.td_subj a
+      date_selector: li.td_date
+      key_param: nttId
       org_name: 구미문화재단
       org_fixed: true
       include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
