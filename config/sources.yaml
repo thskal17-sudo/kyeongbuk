@@ -2463,7 +2463,7 @@ sources:
     keyword_filter: true
     phase: 3
     enabled: true
-    verified: false
+    verified: true
     options:
       korea_only: true
       link_template: "https://www.gbgs.go.kr/lib/board/detail.tc?mn=1059&mngNo=104&pageIndex=1&boardNo={0}&pageSeq=604"
