@@ -262,7 +262,37 @@ def _collect_source(
 
     if result_notices:
         close_finished(store, src.id, result_notices, today)
+    revisit_missing_deadlines(collector, store, rules, today, {p.uid for p in items}, budget)
     return result
+
+
+def revisit_missing_deadlines(collector, store: Store, rules: Rules, today: date, listed: set[str], budget: dict[str, int], limit: int = 20) -> None:
+    """목록에서 밀려난 최근 공고 중 마감일을 아직 못 찾은 글을 상세 주소로 다시 찾아본다.
+
+    처음 볼 때 첨부 공고문을 못 읽었거나(경북교육청), 서버가 잠시 안 됐던 글이 목록 2쪽으로 넘어가면
+    다시 볼 기회가 없어 '보류'로 남는다. 글 수가 적고(마감일 없는 최근 글) 상세 읽기 한도 안에서만 돈다.
+    """
+    src = collector.source
+    since = today - timedelta(days=rules.new_max_age_days)
+    pending = [p for p in store.open_postings(src.id, since=since) if p.deadline is None and p.uid not in listed and p.url]
+    for p in pending[:limit]:
+        if judge(p.title, rules, src.keyword_filter, "") is None:
+            store.mark_closed(p.uid)  # 걸러내는 말이 늘어 더는 강사 공고가 아닌 글 ('보강사업' 입찰 등)
+            log.info("강사 공고 아님(규칙 변경) %s", p.title)
+            continue
+        if budget["details"] <= 0:
+            return
+        budget["details"] -= 1
+        p.detail_url = p.url if src.options.get("detail_get", True) else None
+        soup = _fetch_detail(collector, p)
+        if soup is None:
+            continue
+        deadline = extract_deadline(page_text(soup), today, anywhere=False)
+        if deadline is None:
+            deadline = _deadline_in_notice(_attachment_text(collector, soup, p, budget), today, p)
+        if deadline:
+            store.set_deadline(p.uid, deadline)
+            log.info("목록에서 밀려난 글 마감일 %s → %s", p.title, deadline)
 
 
 def close_finished(store: Store, source_id: str, result_notices: list[Posting], today: date) -> list[Posting]:

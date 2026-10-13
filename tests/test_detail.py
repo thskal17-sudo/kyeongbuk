@@ -188,3 +188,36 @@ def test_missing_deadline_is_retried_when_notice_is_read_again(tmp_path, rules, 
     collect_all([src], rules, store, NoHttp(), now)
     assert store.detail_state(uid)[0] == date(2026, 10, 2)
     store.close()
+
+
+def test_posting_gone_from_list_still_gets_deadline(tmp_path, rules, monkeypatch):
+    # 처음 볼 때 마감일을 못 찾은 글이 목록에서 밀려나도, 저장된 주소로 다시 열어 마감일을 찾는다
+    from gyeongbuk_jobs import pipeline
+
+    monkeypatch.setitem(pipeline.COLLECTORS, "info", InfoBoard)
+    src = Source("info", "정보 게시판", "info", url="https://example.org/list", keyword_filter=False)
+    store = Store(tmp_path / "db.sqlite")
+    now = datetime(2026, 9, 26, 7, 0, tzinfo=KST)
+    gone = Posting("info", "늘봄 외부강사 모집", "https://example.org/r", "gone", posted_date=date(2026, 9, 20))
+    store.upsert(gone, now)
+    store.commit()
+    assert store.detail_state(gone.uid)[0] is None
+
+    collect_all([src], rules, store, NoHttp(), now)
+    assert store.detail_state(gone.uid)[0] == date(2026, 10, 2)
+    store.close()
+
+
+def test_stored_posting_closed_when_rules_no_longer_match(tmp_path, rules, monkeypatch):
+    from gyeongbuk_jobs import pipeline
+
+    monkeypatch.setitem(pipeline.COLLECTORS, "info", InfoBoard)
+    src = Source("info", "정보 게시판", "info", url="https://example.org/list", keyword_filter=True)
+    store = Store(tmp_path / "db.sqlite")
+    now = datetime(2026, 9, 26, 7, 0, tzinfo=KST)
+    bogus = Posting("info", "방파제 보강사업 입찰 공고", "https://example.org/x", "x", posted_date=date(2026, 9, 20))
+    store.upsert(bogus, now)
+    store.commit()
+    collect_all([src], rules, store, NoHttp(), now)
+    assert store.detail_state(bogus.uid)[2] != "모집중"
+    store.close()
