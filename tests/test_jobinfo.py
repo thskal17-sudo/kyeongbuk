@@ -93,3 +93,16 @@ def test_schedule_search_stops_at_next_section():
     # 채용기간 칸이 비어 있으면 다음 항목의 접수기간 날짜를 가져오지 않는다
     text = "채용기간\n추후 안내\n2. 접수기간\n2026. 9. 22. ~ 9. 29."
     assert "schedule" not in extract_info(text)
+
+
+def test_table_cell_values_are_tidied_and_junk_dropped():
+    # 표를 글자로 풀면 값 칸 앞에 ':' 가 남거나 '(' 에서 줄이 끊기고, 머리 칸 글자('인원')가 값으로 잡히기도 한다
+    text = "채용기간\n: 2026. 11. 13.(\n금) ~ 2026. 11. 20.(금)\n지원자격\n인원\n제출서류\n(\n"
+    info = extract_info(text)
+    assert info["schedule"] == "2026. 11. 13.(금) ~ 2026. 11. 20.(금)"
+    assert "qualification" not in info and "documents" not in info
+
+
+def test_schedule_needs_month_and_day():
+    assert "schedule" not in extract_info("운영기간: 2026")
+    assert extract_info("운영기간: - 2026. 10. 19. ~ 2027. 1. 4.")["schedule"] == "2026. 10. 19. ~ 2027. 1. 4."

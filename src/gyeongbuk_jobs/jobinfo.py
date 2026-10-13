@@ -15,7 +15,7 @@ import re
 
 
 # 찾는 방법을 고치면 올린다. 저장된 정보의 버전이 다르면 다음 실행 때 공고문을 다시 읽는다
-INFO_VERSION = 2
+INFO_VERSION = 3
 
 
 def _words(*words: str) -> str:
@@ -93,8 +93,12 @@ def _schedule_below(lines: list[str], start: int, window: int = 12) -> str | Non
         if _SECTION.match(line) or (found and found[0] not in ("schedule", "hours", "headcount", "field")):
             return None  # 다른 항목으로 넘어감
         if _DATED.search(line):
-            if "~" not in line and j + 1 < len(lines) and lines[j + 1].startswith("~"):
-                return f"{line} {lines[j + 1]}"
+            line = _tidy(line)
+            # 표 칸이 '2026. 10. 14.(' / '월) ~ 10. 20.' 처럼 줄 중간에서 끊겼거나 다음 줄이 '~ 끝날짜'면 이어 붙임
+            k = j + 1
+            while k < len(lines) and k <= j + 2 and (line.endswith(("(", "~", "∼")) or lines[k].startswith(("~", "∼", ")"))):
+                line = f"{line}{'' if line.endswith('(') or lines[k].startswith(')') else ' '}{lines[k]}"
+                k += 1
             return line
     return None
 
@@ -152,23 +156,39 @@ def _cap(text: str, limit: int) -> str:
     return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
 
 
+def _tidy(text: str) -> str:
+    """표를 글자로 풀 때 값 칸 앞에 남는 ':'·'-' 같은 기호를 뗀다 (': 2026. 11. 13.' → '2026. 11. 13.')."""
+    return text.strip().lstrip(":：-–·ㆍ•").strip()
+
+
+_SCHEDULE_SHAPE = re.compile(r"\d{1,2}\s*[.월/]\s*\d{1,2}|[월화수목금토일]요일|매주|\d{1,2}\s*[:시]\s*\d{0,2}")
+
+
+def _meaningful(text: str) -> bool:
+    """'인원'·'('·'1.' 처럼 표 머리 칸이나 기호만 잡힌 값은 버린다."""
+    return len(text) >= 4 and re.search(r"[가-힣A-Za-z]{2}|\d{2}", text) is not None
+
+
 def _clean(raw: dict[str, str]) -> dict:
     info: dict = {}
-    schedule = raw.get("schedule", "")
-    if re.search(r"\d", schedule):
-        hours = raw.get("hours", "")
+    schedule = _tidy(raw.get("schedule", ""))
+    if _SCHEDULE_SHAPE.search(schedule):
+        hours = _tidy(raw.get("hours", ""))
         if hours and re.search(r"\d|[월화수목금토일]요일|매주", hours) and hours not in schedule:
             schedule = f"{schedule} / {hours}"
         info["schedule"] = _cap(schedule, 120)
-    if raw.get("target"):
-        info["target"] = _cap(raw["target"], 60)
+    target = _tidy(raw.get("target", ""))
+    if _meaningful(target):
+        info["target"] = _cap(target, 60)
     headcount = raw.get("headcount", "")
     m = re.search(r"(\d{1,3})\s*명", headcount)
     if m and "각" not in headcount and int(m.group(1)) > 0:
         info["headcount"] = int(m.group(1))
     for key, limit in (("qualification", 100), ("documents", 100)):
-        if raw.get(key):
-            info[key] = "\n".join(_cap(part, limit) for part in raw[key].split("\n") if part)
+        parts = [_tidy(part) for part in raw.get(key, "").split("\n")]
+        parts = [_cap(part, limit) for part in parts if _meaningful(part)]
+        if parts:
+            info[key] = "\n".join(parts)
     return info
 
 
