@@ -31,6 +31,22 @@ sources:
     enabled: true
     verified: false
 
+  # 공공데이터포털 15159757 '행정안전부 한국지역정보개발원_채용정보 조회 서비스'. 지방공기업·출자출연기관
+  # (시설공단·도시공사·문화재단 등)의 모집중 공고. 기관 홈페이지가 해외 접속을 막아도 여기로는 받는다
+  - id: cleaneye_api
+    name: 클린아이 채용정보 Open API (지방공기업·출자출연기관)
+    org_type: 공공기관
+    district: 경북전체
+    collector: cleaneye_api
+    url: https://job.cleaneye.go.kr
+    params:
+      sidoCd: "007014"   # 경북 (부산 007002, 울산 007007, 경남 007015)
+    auth_env: DATA_GO_KR_KEY  # 공공데이터포털 개인 인증키. 15159757 활용 승인 필요, 없으면 '설정필요'
+    keyword_filter: true
+    phase: 1
+    enabled: true
+    verified: true
+
   # 기관명 검색(searchSelectninsttnm)은 GET 으로 되고, '경상북도 ○○군'·'경상북도교육청' 처럼 도·시군·교육청 공고가 나온다
   - id: gojobs_list
     name: "나라일터 모집공고 (기관명에 '경상북도' 포함)"
