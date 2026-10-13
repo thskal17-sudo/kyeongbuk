@@ -82,3 +82,14 @@ def test_find_attachments_in_uploader_script():
     assert [(a.name, a.url) for a in found] == [
         ("죽도초 계약제교원 채용 공고(2차).hwp", "https://www.gbe.kr/upload/ph/na/bbs_1507/ntt_1651181/doc_fabfv7d11=48v9e.hwp"),
     ]
+
+
+def test_find_attachments_pohang_yh_cms():
+    page = """<li class="file-item"><a title="첨부파일(채용공고문.hwp) 다운로드" href="#"
+      onclick=" yhLib.file.download('6818B1CD','125EB0AE'); return false;" class="download">
+      <span class="mR5"> 1. 채용공고문(영어강사).hwp </span><span class="file_size">[0.11MB]</span></a></li>
+      <li><a href="#" onclick=" yhLib.file.download('6818B1CD','3C2AF8C6'); return false;"><span>2. 입사지원서(영어강사).hwp</span><span>[0.07MB]</span></a></li>"""
+    found = find_attachments(page_soup(page.encode()), "https://www.pohang.go.kr/portal/agent/board/view.do?idx=1")
+    assert [(a.name, a.url) for a in found] == [
+        ("1. 채용공고문(영어강사).hwp", "https://www.pohang.go.kr/common/file/download.do?atchFileId=6818B1CD&fileSn=125EB0AE"),
+    ]
