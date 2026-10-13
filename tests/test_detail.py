@@ -217,7 +217,12 @@ def test_stored_posting_closed_when_rules_no_longer_match(tmp_path, rules, monke
     now = datetime(2026, 9, 26, 7, 0, tzinfo=KST)
     bogus = Posting("info", "방파제 보강사업 입찰 공고", "https://example.org/x", "x", posted_date=date(2026, 9, 20))
     store.upsert(bogus, now)
+    # 아직 목록에 있는 글도 마찬가지 (InfoBoard 의 'old' 글을 강사 공고가 아닌 제목으로 저장해 둠)
+    listed = Posting("info", "수영 강사 모집", "https://example.org/old", "old", posted_date=date(2026, 9, 1))
+    store.upsert(listed, now)
     store.commit()
+    monkeypatch.setattr(pipeline, "judge", lambda title, *a, **k: None if "보강사업" in title or "수영" in title else "모집중")
     collect_all([src], rules, store, NoHttp(), now)
     assert store.detail_state(bogus.uid)[2] != "모집중"
+    assert store.detail_state(listed.uid)[2] != "모집중"
     store.close()

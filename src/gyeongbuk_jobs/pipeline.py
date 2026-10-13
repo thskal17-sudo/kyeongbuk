@@ -213,6 +213,9 @@ def _collect_source(
 
         status = judge(p.title, rules, src.keyword_filter, p.label, keep_results=True)
         if status is None:
+            if store.detail_state(p.uid)[2] == "모집중":
+                store.mark_closed(p.uid)  # 걸러내는 말이 늘어 더는 강사 공고가 아닌 글 ('보강사업' 입찰 등)
+                log.info("강사 공고 아님(규칙 변경) %s", p.title)
             continue
         if status == "결과공고":
             result_notices.append(p)
