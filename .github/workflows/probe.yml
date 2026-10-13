@@ -56,3 +56,4 @@ jobs:
           PYTHONPATH: src
           PYTHONUNBUFFERED: "1"
           CHECK_IDS: ${{ github.event.inputs.check }}
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}  # cleaneye_api 시험용 (공공데이터포털 개인 인증키)
