@@ -17,7 +17,7 @@
 param(
     [string]$Token = "",  # 처음 등록할 때만 필요. 이미 등록된 PC 에서 다시 실행하면 설정만 고친다
     [string]$Repo = "https://github.com/thskal17-sudo/kyeongbuk",
-    [string]$Branch = "claude/upbeat-wozniak-hv3xh9",
+    [string]$Branch = "main",
     [string]$Dir = "C:\actions-runner-kyeongbuk",
     [switch]$NoSleep  # 전원 연결 상태에서 절전 모드로 들어가지 않게 설정
 )
