@@ -84,6 +84,8 @@ _PERIOD_LABEL = re.compile(
     rf"({_spaced('접수|모집|신청|제출|공고')})\s*({_spaced('기간|기한|마감|일시|일정')})"
     # 공고문에 흔한 '원서접수 : 9. 21. ~ 9. 25.'
     rf"|({_spaced('원서|서류|응시|지원서|지원')})\s*({_spaced('접수')})\s*({_spaced('기간|기한|마감|일시|일정')})?"
+    # '제출 방법 및 기한: … 9월 21일 16:30까지' (교육지원청 공고 본문)
+    rf"|({_spaced('제출|접수')})\s*({_spaced('방법')})\s*및\s*({_spaced('기한|기간')})"
 )
 # 기간 표시 뒤의 글은 다음 항목 이름이 나오기 전까지만 본다 ('접수기간 ~ … 사업기간 9. 1. ~ 12. 31.' 방지)
 _NEXT_ITEM = re.compile(_spaced("기간|기한|일시|장소|방법|대상|문의|자격|인원|구분"))
@@ -108,6 +110,11 @@ def extract_deadline(text: str | None, today: date, anywhere: bool = True) -> da
         d = _deadline_in(window, today)
         if d:
             return d
+    for window in windows:
+        # '접수기간 : 2026.10.19(월)' 처럼 항목 뒤에 날짜가 하나뿐이면 그날이 마감
+        dates = find_all_dates(window, today)
+        if len(dates) == 1 and not re.search(r"[~∼～〜]|부터", window):
+            return dates[0][1]
     return None
 
 

@@ -11,6 +11,7 @@
     <a href="/cmm/fms/FileDown.do?atchFileId=…&fileSn=0">공고문.hwp</a>          그대로 사용
     <a href="javascript:fn_egov_downFile('FILE_…','0')">공고문.hwpx</a>          틀에 인자를 넣음
     onclick="previewAjax('https://…/FileDown.do?…','공고문.hwp')"               안의 주소 사용
+    RAONKUPLOAD.AddUploadedFile('1', '공고문.hwp', '/upload/…/doc_….hwp', …)    스크립트 안의 파일 경로 (경북교육청 gbe.kr)
 """
 from __future__ import annotations
 
@@ -28,6 +29,8 @@ from bs4 import BeautifulSoup
 _EXT = re.compile(r"\.(hwpx|hwp|pdf)(?![a-z])", re.I)
 _SKIP = re.compile(r"서식|양식|신청서|원서|동의서|계획서|이력서|자기소개서|확인서|서약서|개인정보|공통서류|제출서류")
 _JS_CALL = re.compile(r"([A-Za-z_$][\w$]*)\s*\(([^)]*)\)")
+# 업로더 스크립트에 박힌 첨부 목록: AddUploadedFile('1', '이름.hwp', '/upload/…/파일.hwp', '크기', '해시', id)
+UPLOADED_FILE = re.compile(r"AddUploadedFile\(\s*'[^']*'\s*,\s*'([^']+)'\s*,\s*'([^']+)'")
 _URL_IN_JS = re.compile(r"""https?://[^'"\s)]+""")
 DEFAULT_TEMPLATES = {
     # 전자정부 표준프레임워크 기본 내려받기 함수
@@ -89,6 +92,14 @@ def find_attachments(soup: BeautifulSoup, page_url: str, template: str | None = 
         if url and url not in seen:
             seen.add(url)
             found.append(Attachment(name, url))
+    for script in soup.find_all("script"):
+        for name, path in UPLOADED_FILE.findall(script.get_text()):
+            if not _EXT.search(name) or _SKIP.search(name):
+                continue
+            url = urljoin(page_url, html.unescape(path))
+            if url not in seen:
+                seen.add(url)
+                found.append(Attachment(name.strip(), url))
     found.sort(key=lambda att: 0 if "공고" in att.name else 1)
     return found
 

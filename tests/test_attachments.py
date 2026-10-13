@@ -71,3 +71,14 @@ def test_hwp_records_text_skips_controls():
 def test_extract_text_rejects_unknown():
     assert extract_text(b"<html>error</html>") is None
     assert extract_text(b"PK\x03\x04broken") is None
+
+
+def test_find_attachments_in_uploader_script():
+    # 경북교육청(gbe.kr): 첨부가 링크가 아니라 업로더 스크립트 안에 경로로 들어 있다
+    page = """<script>RAONKUPLOAD.AddUploadedFile('1', '죽도초 계약제교원 채용 공고(2차).hwp',
+      '/upload/ph/na/bbs_1507/ntt_1651181/doc_fabfv7d11=48v9e.hwp', '155136', '856c', uploadID);
+      RAONKUPLOAD.AddUploadedFile('2', '지원서 서식.hwp', '/upload/ph/na/bbs_1507/ntt_1651181/doc_2.hwp', '1', 'a', uploadID);</script>"""
+    found = find_attachments(page_soup(page.encode()), "https://www.gbe.kr/ph/na/ntt/selectNttInfo.do?nttSn=1651181")
+    assert [(a.name, a.url) for a in found] == [
+        ("죽도초 계약제교원 채용 공고(2차).hwp", "https://www.gbe.kr/upload/ph/na/bbs_1507/ntt_1651181/doc_fabfv7d11=48v9e.hwp"),
+    ]

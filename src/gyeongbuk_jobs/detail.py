@@ -10,6 +10,8 @@ import re
 
 from bs4 import BeautifulSoup
 
+from .attachments import UPLOADED_FILE
+
 _ELLIPSIS = re.compile(r"(\.{2,}|…)\s*$")
 _TITLE_TAGS = ["h1", "h2", "h3", "h4", "h5", "th", "td", "dt", "dd", "p", "strong", "b", "span", "div", "li", "caption"]
 
@@ -30,6 +32,12 @@ def extends(full: str, short: str) -> bool:
 def page_soup(content: bytes | str) -> BeautifulSoup:
     soup = BeautifulSoup(content, "lxml")
     for tag in soup(["script", "style", "nav", "header", "footer"]):
+        if tag.name == "script":
+            # 업로더 스크립트에만 적힌 첨부 목록(경북교육청 gbe.kr)은 링크로 바꿔 남긴다
+            for name, path in UPLOADED_FILE.findall(tag.get_text()):
+                link = soup.new_tag("a", href=path)
+                link.string = name
+                tag.insert_before(link)
         tag.decompose()
     return soup
 

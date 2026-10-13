@@ -72,3 +72,13 @@ def test_first_period_end_for_table_notices():
     assert first_period_end(text, date(2026, 9, 27), date(2026, 9, 18)) == date(2026, 9, 20)
     # 게시일 무렵에 시작하는 기간이 없으면 (위탁기간만 있으면) 모른다
     assert first_period_end("위탁기간 : 2026. 10. 2. ~ 2026. 12. 11.", date(2026, 9, 27), date(2026, 8, 1)) is None
+
+
+def test_single_date_after_period_label_is_deadline():
+    from datetime import date
+    from gyeongbuk_jobs.dates import extract_deadline
+    today = date(2026, 10, 13)
+    assert extract_deadline("4. 지원방법 가. 접수기간 : 2026.10.19(월) 나. 접수방법: 이메일", today, anywhere=False) == date(2026, 10, 19)
+    assert extract_deadline("다. 제출 방법 및 기한: 방문, 우편, 이메일 접수, 2026년 9월 21(월) 16:30까지 라. 활동 기간: 2026. 9. ~ 2027. 2.", today, anywhere=False) == date(2026, 9, 21)
+    # 시작일만 적힌 경우는 마감이 아님
+    assert extract_deadline("접수기간 : 2026.10.19(월) 부터 선착순", today, anywhere=False) is None
