@@ -105,7 +105,7 @@ def collect_all(
     store: Store,
     http: Http,
     now: datetime,
-    detail_limit: int = 100,
+    detail_limit: int = 250,
     time_limit: float = 20 * 60,
     clock: Callable[[], float] = time.monotonic,
 ) -> list[SourceResult]:
