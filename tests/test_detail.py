@@ -142,7 +142,7 @@ def test_pipeline_reads_notice_info_once(tmp_path, rules, monkeypatch):
     posting = next(p for p in store.unreported() if p.post_key == "r")
     assert posting.deadline == date(2026, 10, 2)
     assert posting.title == "방과후 로봇과학 강사 모집 공고"  # 목록에서 잘린 제목은 전체로
-    assert posting.info == {"schedule": "2026.10.6.~12.15.", "target": "초등 3~4학년", "headcount": 1, "v": 3}
+    assert posting.info == {"schedule": "2026.10.6.~12.15.", "target": "초등 3~4학년", "headcount": 1, "v": 4}
     assert InfoBoard.fetched == ["https://example.org/r"]
 
     # 다음 날: 이미 읽은 공고문은 다시 열지 않는다
@@ -167,4 +167,24 @@ def test_notice_is_read_again_when_extraction_improves(tmp_path, rules, monkeypa
     collect_all([src], rules, store, NoHttp(), now)
     assert InfoBoard.fetched == ["https://example.org/r"]
     assert store.detail_state(uid)[1]["schedule"] == "2026.10.6.~12.15."
+    store.close()
+
+
+def test_missing_deadline_is_retried_when_notice_is_read_again(tmp_path, rules, monkeypatch):
+    # 처음 볼 때 마감일을 못 찾은 글(첨부를 못 읽었던 경북교육청 공고 등)도, 찾는 방법이 바뀌어
+    # 공고문을 다시 읽을 때 마감일을 다시 찾는다
+    from gyeongbuk_jobs import pipeline
+
+    monkeypatch.setitem(pipeline.COLLECTORS, "info", InfoBoard)
+    src = Source("info", "정보 게시판", "info", url="https://example.org/list", keyword_filter=False)
+    store = Store(tmp_path / "db.sqlite")
+    now = datetime(2026, 9, 26, 7, 0, tzinfo=KST)
+    collect_all([src], rules, store, NoHttp(), now)
+    uid = next(p.uid for p in store.unreported() if p.post_key == "r")
+    store.conn.execute("update postings set deadline=NULL where uid=?", (uid,))
+    store.set_info(uid, {"v": 1})
+    store.commit()
+
+    collect_all([src], rules, store, NoHttp(), now)
+    assert store.detail_state(uid)[0] == date(2026, 10, 2)
     store.close()

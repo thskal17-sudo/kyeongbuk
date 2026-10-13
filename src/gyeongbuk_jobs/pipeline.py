@@ -227,9 +227,10 @@ def _collect_source(
         if not (p.detail_url and worth_detail(p, today, rules)):
             continue
         deadline, info, stored_status = store.detail_state(p.uid)
-        need_deadline = is_new and deadline is None
         # 강사잇다 양식용: 마감 전 모집공고는 공고문을 한 번 읽어 수업 일정·대상 등을 찾아 둔다
         stale = info is None or info.get("v") != INFO_VERSION
+        # 처음 본 글, 또는 (찾는 방법이 바뀌거나 전에 못 읽어) 공고문을 다시 읽는 글은 마감일도 다시 찾는다
+        need_deadline = deadline is None and (is_new or stale)
         need_info = stored_status == "모집중" and stale and (deadline is None or deadline >= today)
         if not (need_deadline or need_info):
             continue
