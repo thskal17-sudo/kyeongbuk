@@ -1170,6 +1170,7 @@ sources:
       org_fixed: true
       include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
 
+  # 글 주소의 write_seq 가 목록을 열 때마다 바뀐다 (1650577 → 5550578 …). 같은 글이 매일 새 글로 저장되므로 제목으로 식별
   - id: yeongju_lll_notice
     name: 영주시 평생학습센터 공지사항
     org_type: 평생교육·도서관
@@ -1182,6 +1183,7 @@ sources:
     enabled: true
     verified: true
     options:
+      key_selector: a
       org_name: 영주시 평생학습센터
       org_fixed: true
       include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
