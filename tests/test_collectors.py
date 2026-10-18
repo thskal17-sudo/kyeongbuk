@@ -150,3 +150,16 @@ def test_form_board_posts_search_form_with_token():
         ("울산 강사 모집 1", "1", "https://job.example.kr/recruitview.do?idx=1"),
         ("울산 강사 모집 2", "2", "https://job.example.kr/recruitview.do?idx=2"),
     ]
+
+
+def test_work24_excludes_private_training_schools():
+    import re
+    from gyeongbuk_jobs.collectors.work24_api import DEFAULT_ORG_EXCLUDE, DEFAULT_ORG_INCLUDE
+
+    inc, exc = re.compile(DEFAULT_ORG_INCLUDE), re.compile(DEFAULT_ORG_EXCLUDE)
+    keep = lambda org: bool(inc.search(org)) and not exc.search(org)
+    assert not keep("경주직업전문학교")
+    assert not keep("구미직업전문학교")
+    assert keep("포항제철초등학교")
+    assert keep("한국폴리텍대학 구미캠퍼스")
+    assert keep("경상북도교육청")
