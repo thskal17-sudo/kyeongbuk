@@ -161,5 +161,6 @@ def test_work24_excludes_private_training_schools():
     assert not keep("경주직업전문학교")
     assert not keep("구미직업전문학교")
     assert keep("포항제철초등학교")
-    assert keep("한국폴리텍대학 구미캠퍼스")
+    assert not keep("한국폴리텍대학 구미캠퍼스")
+    assert not keep("대한상공회의소 경북인력개발원")
     assert keep("경상북도교육청")
