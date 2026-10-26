@@ -46,6 +46,14 @@ class HostUnreachable(requests.exceptions.ConnectionError):
     """이번 실행에서 이미 접속하지 못한 서버라 기다리지 않고 건너뜀."""
 
 
+class FirewallBlocked(requests.exceptions.ConnectionError):
+    """웹 방화벽이 차단 화면을 HTTP 200 으로 보냄 (해외 IP 차단). 0건이 아니라 접속불가로 본다."""
+
+
+# 시·군 누리집 웹 방화벽 차단 화면 ('…contrary to the Web firewall security policies have been blocked.')
+_WAF_BLOCK = b"contrary to the Web firewall security policies"
+
+
 class Http:
     def __init__(
         self,
@@ -129,6 +137,10 @@ class Http:
                 self._unreachable.add(host)
             raise
         self._read_body(resp)
+        body = getattr(resp, "_content", b"") or b""
+        if len(body) < 5000 and _WAF_BLOCK in body:
+            self._unreachable.add(host)
+            raise FirewallBlocked(f"웹 방화벽 차단 화면: {host}")
         resp.raise_for_status()
         return resp
 

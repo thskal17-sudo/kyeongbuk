@@ -1134,7 +1134,7 @@ sources:
 
   # ─────────────────────────────── 평생학습·도서관·문화
 
-  # 수강생 모집이 대부분이라 강사·튜터·인력풀 글만
+  # 수강생 모집이 대부분이라 강사·튜터·인력풀 글만. 2026-10-19 부터 해외 접속을 웹 방화벽으로 막아 한국 PC 담당
   - id: pohang_lll_notice
     name: 포항시 평생학습원 공지사항
     org_type: 평생교육·도서관
@@ -1147,6 +1147,7 @@ sources:
     enabled: true
     verified: true
     options:
+      korea_only: true
       org_name: 포항시 평생학습원
       include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
 
@@ -1901,6 +1902,7 @@ sources:
 
   # ─────────────────────────────── 평생학습관·평생교육 (추가)
 
+  # 2026-10-19 부터 해외 접속을 웹 방화벽으로 막아 한국 PC 담당
   - id: pohang_lll_orgs
     name: 포항시 평생학습원 공지사항(유관기관·읍면동 평생학습)
     org_type: 평생교육·도서관
@@ -1913,6 +1915,7 @@ sources:
     enabled: true
     verified: true
     options:
+      korea_only: true
       org_name: 포항시 평생학습원
       include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
 

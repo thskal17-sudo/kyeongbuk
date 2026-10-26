@@ -17,7 +17,7 @@ from .config import DEFAULT_CONFIG_DIR, Rules, Source, load_rules, load_settings
 from .dates import extract_deadline, first_period_end
 from .detail import extends, full_title, looks_truncated, page_text
 from .gangsaitda import TEMPLATE_NAME, build_gangsaitda
-from .http import HostUnreachable, Http, is_connect_failure
+from .http import FirewallBlocked, HostUnreachable, Http, is_connect_failure
 from .jobinfo import INFO_VERSION, extract_info
 from .matching import finished_by
 from .mailer import MailConfig, build_message, html_body, send, subject_line, text_body
@@ -145,6 +145,8 @@ def describe_failure(exc: Exception) -> tuple[str, str]:
     """수집 실패를 메일·엑셀에 보일 상태와 짧은 설명으로 바꾼다 (자세한 오류는 실행 로그에 남음)."""
     if isinstance(exc, HostUnreachable):
         return "접속불가", "같은 서버가 앞서 응답하지 않아 건너뜀"
+    if isinstance(exc, FirewallBlocked):
+        return "접속불가", "웹 방화벽 차단 화면 (해외 접속 차단)"
     if isinstance(exc, requests.exceptions.ConnectionError) and is_connect_failure(exc):
         return "접속불가", "서버가 응답하지 않음 (해외 접속 차단 또는 일시 장애)"
     if isinstance(exc, requests.exceptions.HTTPError) and exc.response is not None:

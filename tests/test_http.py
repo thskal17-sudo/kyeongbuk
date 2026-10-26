@@ -97,3 +97,21 @@ def test_short_headers_drop_accept_language(monkeypatch):
         ("https://eminwon.bsnamgu.go.kr/emwp/view", {"Accept-Language": None}),
         ("https://eminwon.saha.go.kr/emwp/view", None),
     ]
+
+
+def test_firewall_block_page_is_unreachable(monkeypatch):
+    from gyeongbuk_jobs import pipeline
+    from gyeongbuk_jobs.http import FirewallBlocked
+
+    class _Blocked(_Resp):
+        def iter_content(self, chunk_size):
+            yield (b"<center><h2> The request / response that are contrary to the Web firewall "
+                   b"security policies have been blocked. </h2></center>")
+
+    client = Http(min_interval=0)
+    monkeypatch.setattr(client.session, "request", lambda method, url, **kw: _Blocked())
+    with pytest.raises(FirewallBlocked) as info:
+        client.get("https://lifetimeedu.pohang.go.kr/page/post_list.php")
+    assert pipeline.describe_failure(info.value)[0] == "접속불가"
+    with pytest.raises(HostUnreachable):  # 같은 서버의 다음 게시판은 기다리지 않고 건너뜀
+        client.get("https://lifetimeedu.pohang.go.kr/page/post_list.php?bbs_id=2")
