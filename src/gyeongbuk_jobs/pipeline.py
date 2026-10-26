@@ -190,6 +190,8 @@ def _collect_source(
 
     result.fetched = len(items)
     result.samples = [p.title for p in items[:3]]
+    if not items and src.collector.endswith("_api"):
+        return result  # 공식 API 는 조건에 맞는 공고가 없으면 빈 목록을 준다 (고용24 공공기관 강사 공고 0건 등). 고장이 아님
     if not items:
         result.state, result.error = "0건", "목록에서 글을 하나도 읽지 못함 (서버 일시 장애 또는 사이트 구조 변경. 며칠 계속되면 확인 필요)"
         return result
