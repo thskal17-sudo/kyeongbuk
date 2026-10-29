@@ -33,6 +33,7 @@ def cmd_run(args) -> int:
         catch_up=args.catch_up,
         korea=args.korea,
         korea_db=Path(args.korea_db) if args.korea_db else None,
+        github_db=Path(args.github_db) if args.github_db else None,
     )
     if args.retry_list:
         retry = [r.source_id for r in outcome.results if r.needs_other_server]
@@ -136,6 +137,9 @@ def main(argv: list[str] | None = None) -> int:
         "--korea", action="store_true", help="한국 PC(자체 실행기)용: 해외 차단 소스(korea_only)만 수집해 --db 에 저장 (메일 없음)"
     )
     p_run.add_argument("--korea-db", default=None, help="한국 PC 가 저장해 둔 DB. 그 소스들의 공고·상태를 함께 보냄")
+    p_run.add_argument(
+        "--github-db", default=None, help="(--korea 와 함께) GitHub 서버 수집 기록. 이틀 넘게 접속 못 한 곳도 함께 읽음"
+    )
     p_run.set_defaults(func=cmd_run)
 
     p_check = sub.add_parser("check-source", help="소스 시험 수집")

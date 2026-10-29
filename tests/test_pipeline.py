@@ -419,3 +419,59 @@ def test_stale_or_missing_korea_db_is_flagged(korea_env):
     )
     blocked = next(r for r in outcome.results if r.source_id == "blocked")
     assert blocked.state == "PC미실행" and "09/24 05:47" in blocked.error
+
+
+def test_source_blocked_on_github_for_two_days_is_read_by_korea_pc(korea_env, monkeypatch):
+    import requests
+
+    from gyeongbuk_jobs.models import SourceResult
+    from gyeongbuk_jobs.storage import Store
+
+    tmp_path, config, sent = korea_env
+    github_db = tmp_path / "db.sqlite"
+    store = Store(github_db)
+    for day in (24, 25):  # GitHub 서버에서 이틀 연속 웹 방화벽 차단
+        r = SourceResult("fake", "가짜", "", "")
+        r.state, r.error = "접속불가", "웹 방화벽 차단 화면 (해외 접속 차단)"
+        store.log_runs([r], datetime(2026, 9, day, 7, 0, tzinfo=KST))
+    store.commit()
+    store.close()
+
+    korea = pipeline.run(
+        db_path=tmp_path / "korea.db", out_dir=tmp_path / "out-korea", send_mail=False, config_dir=config,
+        now=datetime(2026, 9, 26, 5, 47, tzinfo=KST), korea=True, github_db=github_db,
+    )
+    assert {r.source_id for r in korea.results} == {"blocked", "fake"}  # korea_only + 이틀째 막힌 곳
+
+    class Blocked(Collector):
+        def collect(self):
+            raise requests.exceptions.ConnectTimeout("timed out")
+
+    monkeypatch.setitem(COLLECTORS, "fake", Blocked)
+    outcome = pipeline.run(
+        db_path=github_db, out_dir=tmp_path / "out", send_mail=False, config_dir=config, now=NOW,
+        korea_db=tmp_path / "korea.db",
+    )
+    fake = next(r for r in outcome.results if r.source_id == "fake")
+    assert fake.state == "정상" and fake.relayed and "한국 PC 가 대신 읽음" in fake.error
+    assert not fake.needs_other_server
+    assert fake.matched > 0
+
+
+def test_one_day_block_is_not_relayed(korea_env):
+    from gyeongbuk_jobs.models import SourceResult
+    from gyeongbuk_jobs.storage import Store
+
+    tmp_path, config, sent = korea_env
+    store = Store(tmp_path / "db.sqlite")
+    ok, bad = SourceResult("fake", "가짜", "", ""), SourceResult("fake", "가짜", "", "")
+    bad.state = "접속불가"
+    store.log_runs([ok], datetime(2026, 9, 24, 7, 0, tzinfo=KST))
+    store.log_runs([bad], datetime(2026, 9, 25, 7, 0, tzinfo=KST))
+    store.commit()
+    store.close()
+    korea = pipeline.run(
+        db_path=tmp_path / "korea.db", out_dir=tmp_path / "out-korea", send_mail=False, config_dir=config,
+        now=datetime(2026, 9, 26, 5, 47, tzinfo=KST), korea=True, github_db=tmp_path / "db.sqlite",
+    )
+    assert [r.source_id for r in korea.results] == ["blocked"]

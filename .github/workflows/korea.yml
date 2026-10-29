@@ -40,10 +40,13 @@ jobs:
           "$PY" -m pip install -q -r requirements.txt
 
       - name: 이전 수집 기록(DB) 가져오기
-        run: bash scripts/state_db.sh restore data/korea.db state-korea
+        run: |
+          bash scripts/state_db.sh restore data/korea.db state-korea
+          # GitHub 서버의 수집 기록: 거기서 이틀 넘게 접속하지 못한 게시판도 이 PC 가 함께 읽는다
+          bash scripts/state_db.sh restore data/postings.db state
 
       - name: 해외 차단 사이트 수집
-        run: '"$PY" -m gyeongbuk_jobs run --korea --db data/korea.db --out out-korea'
+        run: '"$PY" -m gyeongbuk_jobs run --korea --db data/korea.db --github-db data/postings.db --out out-korea'
 
       - name: 수집 기록(DB) 저장
         if: always() && hashFiles('data/korea.db') != ''

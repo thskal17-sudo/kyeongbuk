@@ -58,6 +58,37 @@ def select_sources(
     return [s for s in sources if s.enabled and s.phase <= max_phase and is_korea_only(s) == korea]
 
 
+UNREACHABLE = "접속불가"
+
+
+def blocked_on_github(github_db: Path | None, sources: list[Source], now: datetime, days: int = 2) -> list[Source]:
+    """GitHub 서버에서 최근 서로 다른 날 days 번 연속 접속하지 못한 소스 (한국 PC 가 대신 읽어 볼 곳).
+
+    시·군 누리집이 새로 해외 접속을 막기 시작하면(웹 방화벽 차단 화면·응답 없음) 사람이 sources.yaml 에
+    korea_only 를 달기 전까지 그 게시판 공고가 빠진다. 그 사이를 한국 PC 가 자동으로 메운다.
+    """
+    if github_db is None or not github_db.exists():
+        return []
+    store = Store(github_db)
+    try:
+        picked = []
+        for src in sources:
+            if is_korea_only(src) or not src.enabled:
+                continue
+            rows = store.conn.execute(
+                "SELECT run_at, state FROM source_runs WHERE source_id = ? ORDER BY run_at DESC LIMIT 12", (src.id,)
+            ).fetchall()
+            by_day: dict[str, str] = {}
+            for row in rows:  # 날마다 그날 마지막 기록 (보충 실행이 같은 날 다시 시도한 결과 포함)
+                by_day.setdefault(row["run_at"][:10], row["state"])
+            recent = list(by_day.values())[:days]
+            if len(recent) == days and all(state == UNREACHABLE for state in recent):
+                picked.append(src)
+        return picked
+    finally:
+        store.close()
+
+
 def import_korea(
     store: Store, korea_db: Path, sources: list[Source], now: datetime, max_age_hours: float = 36
 ) -> list[SourceResult]:
@@ -380,16 +411,23 @@ def run(
     catch_up: bool = False,
     korea: bool = False,
     korea_db: Path | None = None,
+    github_db: Path | None = None,
 ) -> RunOutcome:
     """catch_up: 앞선 실행에서 접속 안 된 소스(only)를 다른 서버에서 다시 수집하는 보충 실행.
     새 공고가 있을 때만 '보충' 메일을 보낸다 (마감임박 목록은 앞선 메일에 이미 있음).
     korea: 한국 PC(자체 실행기)에서 해외 차단 소스(korea_only)만 수집해 db_path 에 저장한다 (메일 없음).
-    korea_db: 한국 PC 가 저장해 둔 DB. 주면 그 소스들의 공고·상태를 가져와 함께 보낸다."""
+    korea_db: 한국 PC 가 저장해 둔 DB. 주면 그 소스들의 공고·상태를 가져와 함께 보낸다.
+    github_db: (korea 일 때) GitHub 서버의 수집 기록. 거기서 이틀 넘게 접속 못 한 곳을 한국 PC 가 함께 읽는다."""
     settings = load_settings(config_dir)
     rules = load_rules(config_dir)
     now = now or now_kst()
     today = now.date()
     sources = select_sources(settings.sources, only, max_phase or settings.max_phase, korea=korea)
+    if korea and not only:
+        extra = blocked_on_github(github_db, settings.sources, now)
+        if extra:
+            log.info("GitHub 서버에서 이틀 넘게 접속하지 못해 함께 읽는 곳: %s", ", ".join(s.name for s in extra))
+        sources += [s for s in extra if s.phase <= (max_phase or settings.max_phase)]
     source_names = {s.id: s.name for s in settings.sources}
 
     store = Store(db_path)
@@ -398,6 +436,15 @@ def run(
         if korea_db is not None and not (korea or catch_up or only):
             relayed = select_sources(settings.sources, None, max_phase or settings.max_phase, korea=True)
             results += import_korea(store, korea_db, relayed, now)
+            # GitHub 서버에서 접속하지 못한 곳을 한국 PC 가 최근에 읽어 두었으면 그 결과로 바꾼다
+            by_id = {s.id: s for s in sources}
+            failed = [r.source_id for r in results if r.state == UNREACHABLE and not r.relayed and r.source_id in by_id]
+            if failed:
+                backups = import_korea(store, korea_db, [by_id[i] for i in failed], now)
+                fresh = {b.source_id: b for b in backups if b.state not in (PC_WAITING, UNREACHABLE)}
+                for b in fresh.values():
+                    b.error = (b.error + " · " if b.error else "") + "GitHub 서버 접속 차단 → 한국 PC 가 대신 읽음"
+                results = [fresh.get(r.source_id, r) if not r.relayed else r for r in results]
         store.log_runs(results, now)
         store.commit()
 
