@@ -1135,6 +1135,7 @@ sources:
   # ─────────────────────────────── 평생학습·도서관·문화
 
   # 수강생 모집이 대부분이라 강사·튜터·인력풀 글만. 2026-10-19 부터 해외 접속을 웹 방화벽으로 막아 한국 PC 담당
+  # 2026-10-29 확인: lifetimeedu.pohang.go.kr 이 포항시 통합 포털로 넘어가고 옛 게시판 주소는 404 (한국 PC 에서도). 새 주소를 찾으면 다시 켬
   - id: pohang_lll_notice
     name: 포항시 평생학습원 공지사항
     org_type: 평생교육·도서관
@@ -1144,7 +1145,7 @@ sources:
     pages: 1
     keyword_filter: true
     phase: 3
-    enabled: true
+    enabled: false
     verified: true
     options:
       korea_only: true
@@ -1903,6 +1904,7 @@ sources:
   # ─────────────────────────────── 평생학습관·평생교육 (추가)
 
   # 2026-10-19 부터 해외 접속을 웹 방화벽으로 막아 한국 PC 담당
+  # 2026-10-29 확인: lifetimeedu.pohang.go.kr 이 포항시 통합 포털로 넘어가고 옛 게시판 주소는 404 (한국 PC 에서도). 새 주소를 찾으면 다시 켬
   - id: pohang_lll_orgs
     name: 포항시 평생학습원 공지사항(유관기관·읍면동 평생학습)
     org_type: 평생교육·도서관
@@ -1912,7 +1914,7 @@ sources:
     pages: 1
     keyword_filter: true
     phase: 3
-    enabled: true
+    enabled: false
     verified: true
     options:
       korea_only: true
