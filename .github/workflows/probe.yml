@@ -58,3 +58,4 @@ jobs:
           CHECK_IDS: ${{ github.event.inputs.check }}
           DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}  # cleaneye_api 시험용 (공공데이터포털 개인 인증키)
           WORK24_API_KEY: ${{ secrets.WORK24_API_KEY }}  # work24_api 시험용
+          KR_PROXY_URL: ${{ secrets.KR_PROXY_URL }}  # 국내 중계 서버(네이버 클라우드). 없으면 바로 접속
