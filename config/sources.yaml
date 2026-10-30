@@ -1077,7 +1077,7 @@ sources:
       link_template: "https://www.andong.go.kr{0}&mId=0401070000"
       key_param: bIdx
 
-  # 청도군·울릉군·청송군 새올은 해외 접속을 막아(웹 방화벽·시간 초과) 한국 PC(자체 실행기)에서 읽는다 → 아래 '한국 PC 담당' 참고
+  # 청도군·울릉군·청송군 새올은 해외 접속을 막아(웹 방화벽·시간 초과) 국내 중계로 읽고 한국 PC 가 예비로 읽는다 → 아래 '해외 차단 사이트' 참고
 
   # ─────────────────────────────── 공단·체육시설
 
@@ -2301,13 +2301,13 @@ sources:
       org_fixed: true
       include: [강사, 튜터, 인력풀, 개설 희망, 강좌 제안, 강의 제안, 강좌제안]
 
-  # ─────────────────────────────── 한국 PC 담당 (해외 접속 차단 사이트, korea_only: true)
+  # ─────────────────────────────── 해외 접속 차단 사이트 (국내 중계 + 한국 PC 예비, korea_backup: true)
 
-  # GitHub 수집 서버(미국)는 이 사이트들에 접속하지 못한다 (시·군 누리집의 웹 방화벽이 해외 IP 를 막음).
-  # 사무실·집의 한국 PC 에 설치한 GitHub 자체 실행기(라벨 korea)가 매일 05:47 에 이것만 먼저 읽어 state-korea 브랜치에
-  # 저장하고(.github/workflows/korea.yml), 06:17 매일 작업이 그 결과를 가져와 한 메일로 보낸다.
-  # 해외에서는 열리지 않아 목록 구조를 미리 확인하지 못했다 (verified: false). 실행기 설치 뒤
-  # 사이트 진단(probe)을 runner: korea 로 돌려 확인한다. 상세 주소 틀은 같은 누리집 틀의 다른 게시판을 따랐다.
+  # GitHub 수집 서버(미국)는 이 사이트들에 바로 접속하지 못한다 (시·군 누리집의 웹 방화벽이 해외 IP 를 막음).
+  # 2026-10-30 부터 GitHub 서버가 국내 중계 서버(Secret KR_PROXY_URL)를 거쳐 읽는다 (15곳 모두 읽히는 것 확인).
+  # 사무실·집의 한국 PC 에 설치한 GitHub 자체 실행기(라벨 korea)도 매일 05:47 에 예비로 읽어 state-korea 브랜치에
+  # 저장해 두고(.github/workflows/korea.yml), 중계 서버가 꺼져 06:17 매일 작업이 접속하지 못한 날은 그 결과로 바꾼다.
+  # 한국 PC 만 읽게 하려면 korea_backup 대신 korea_only: true 로 바꾼다.
 
   - id: cheongdo_eminwon
     name: 청도군청 채용공고(새올)
@@ -2321,7 +2321,7 @@ sources:
     enabled: true
     verified: false
     options:
-      korea_only: true
+      korea_backup: true
       page_param: pageIndex
       org_prefix: 청도군청
       link_template: "https://eminwon.cheongdo.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectOfrNotAncmt&methodnm=selectOfrNotAncmtRegst&not_ancmt_mgt_no={0}&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&list_gubun=A&Key=B_Subject"
@@ -2339,7 +2339,7 @@ sources:
     enabled: true
     verified: false
     options:
-      korea_only: true
+      korea_backup: true
       page_param: pageIndex
       org_prefix: 울릉군청
       link_template: "https://eminwon.ulleung.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectOfrNotAncmt&methodnm=selectOfrNotAncmtRegst&not_ancmt_mgt_no={0}&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&list_gubun=A&Key=B_Subject"
@@ -2357,7 +2357,7 @@ sources:
     enabled: true
     verified: false
     options:
-      korea_only: true
+      korea_backup: true
       page_param: pageIndex
       org_prefix: 청송군청
       link_template: "https://eminwon.cs.go.kr/emwp/gov/mogaha/ntis/web/ofr/action/OfrAction.do?jndinm=OfrNotAncmtEJB&context=NTIS&method=selectOfrNotAncmt&methodnm=selectOfrNotAncmtRegst&not_ancmt_mgt_no={0}&homepage_pbs_yn=Y&subCheck=Y&ofr_pageSize=10&not_ancmt_se_code=05&title=%EC%B1%84%EC%9A%A9%EA%B3%B5%EA%B3%A0&initValue=Y&countYn=Y&list_gubun=A&Key=B_Subject"
@@ -2375,7 +2375,7 @@ sources:
     enabled: true
     verified: false
     options:
-      korea_only: true
+      korea_backup: true
       link_template: "https://www.gc.go.kr/portal/bbs/view.do?bIdx={1}&ptIdx={2}&mId={3}"
       key_param: bIdx
       org_prefix: 김천시
@@ -2394,7 +2394,7 @@ sources:
     enabled: false
     verified: false
     options:
-      korea_only: true
+      korea_backup: true
       link_template: "https://www.gc.go.kr/jobPortal/bbs/view.do?bIdx={1}&ptIdx={2}&mId={3}"
       key_param: bIdx
       org_prefix: 김천시
@@ -2411,7 +2411,7 @@ sources:
     enabled: true
     verified: false
     options:
-      korea_only: true
+      korea_backup: true
       link_template: "https://www.chilgok.go.kr/portal/bbs/view.do?bIdx={1}&ptIdx={2}&mId={3}"
       key_param: bIdx
 
@@ -2427,7 +2427,7 @@ sources:
     enabled: true
     verified: false
     options:
-      korea_only: true
+      korea_backup: true
       page_param: viewPage
       link_attr: keyvalue
       link_template: "https://phlib.pohang.go.kr/phlib/board/view.do?menu_idx=33&manage_idx=312&board_idx={0}"
@@ -2447,7 +2447,7 @@ sources:
     enabled: true
     verified: false
     options:
-      korea_only: true
+      korea_backup: true
       page_param: viewPage
       link_attr: keyvalue
       link_template: "https://lib.andong.go.kr/andonglibrary/board/view.do?menu_idx=331&manage_idx=1&board_idx={0}"
@@ -2468,7 +2468,7 @@ sources:
     enabled: true
     verified: true
     options:
-      korea_only: true
+      korea_backup: true
       link_template: "https://www.gcl.go.kr/page/10102/10054.tc?pageDtlOrdrNo=1&boardNo={0}&boardMngNo=2&importUrl=%2Fboard%2Fview.tc"
       key_param: boardNo
       org_name: 김천시립도서관
@@ -2488,7 +2488,7 @@ sources:
     enabled: true
     verified: true
     options:
-      korea_only: true
+      korea_backup: true
       link_template: "https://www.gbgs.go.kr/lib/board/detail.tc?mn=1059&mngNo=104&pageIndex=1&boardNo={0}&pageSeq=604"
       key_param: boardNo
       org_name: 경산시립도서관
@@ -2508,7 +2508,7 @@ sources:
     enabled: true
     verified: false
     options:
-      korea_only: true
+      korea_backup: true
       key_param: lb_idx
       org_name: 고령군 다산도서관
       org_fixed: true
@@ -2527,7 +2527,7 @@ sources:
     enabled: true
     verified: false
     options:
-      korea_only: true
+      korea_backup: true
       key_param: BOARD_IDX
       org_prefix: 고령군
       include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
@@ -2544,7 +2544,7 @@ sources:
     enabled: true
     verified: false
     options:
-      korea_only: true
+      korea_backup: true
       link_template: "https://www.gbgs.go.kr/lll/board/detail.tc?mn=2422&mngNo=1&boardNo={0}"
       key_param: boardNo
       org_name: 경산시 평생학습관
@@ -2564,7 +2564,7 @@ sources:
     enabled: false
     verified: false
     options:
-      korea_only: true
+      korea_backup: true
       org_name: 청도군 평생학습센터
       org_fixed: true
       include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
@@ -2582,7 +2582,7 @@ sources:
     enabled: false
     verified: false
     options:
-      korea_only: true
+      korea_backup: true
       org_name: 칠곡군 교육문화회관
       org_fixed: true
       include: [강사, 튜터, 멘토, 코치, 지도자, 인력풀]
@@ -2600,7 +2600,7 @@ sources:
     enabled: true
     verified: true
     options:
-      korea_only: true
+      korea_backup: true
       key_param: idx
       org_name: 포항문화원
       org_fixed: true
@@ -2619,7 +2619,7 @@ sources:
     enabled: true
     verified: true
     options:
-      korea_only: true
+      korea_backup: true
       row_selector: ul.bbstb_tr.tbody
       title_selector: li.td_subj a
       date_selector: li.td_date
@@ -2640,7 +2640,7 @@ sources:
     enabled: true
     verified: false
     options:
-      korea_only: true
+      korea_backup: true
       org_name: 위덕대학교 평생교육원
       org_fixed: true
       include: [강사, 튜터, 인력풀, 개설 신청, 개설 희망, 강좌 제안, 강의 제안]

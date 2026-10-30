@@ -46,16 +46,27 @@ def is_korea_only(src: Source) -> bool:
     return bool(src.options.get("korea_only"))
 
 
+def is_korea_backup(src: Source) -> bool:
+    """GitHub 서버가 국내 중계(KR_PROXY_URL)로 읽고, 한국 PC 도 매일 함께 읽어 두는 소스 (korea_backup: true).
+
+    중계 서버가 꺼진 날 GitHub 서버가 접속하지 못하면 한국 PC 가 읽어 둔 결과로 바로 바꾼다.
+    """
+    return bool(src.options.get("korea_backup"))
+
+
 def select_sources(
     sources: list[Source], only: list[str] | None, max_phase: int, korea: bool = False
 ) -> list[Source]:
-    """수집할 소스. 기본(GitHub 서버)은 한국 PC 담당을 빼고, korea=True(한국 PC)면 그것만."""
+    """수집할 소스. 기본(GitHub 서버)은 한국 PC 담당을 빼고, korea=True(한국 PC)면 그것과 예비(korea_backup)만."""
     if only:
         unknown = set(only) - {s.id for s in sources}
         if unknown:
             raise ValueError(f"알 수 없는 소스 id: {sorted(unknown)}")
         return [s for s in sources if s.id in only]
-    return [s for s in sources if s.enabled and s.phase <= max_phase and is_korea_only(s) == korea]
+    picked = [s for s in sources if s.enabled and s.phase <= max_phase]
+    if korea:
+        return [s for s in picked if is_korea_only(s) or is_korea_backup(s)]
+    return [s for s in picked if not is_korea_only(s)]
 
 
 UNREACHABLE = "접속불가"
@@ -73,7 +84,7 @@ def blocked_on_github(github_db: Path | None, sources: list[Source], now: dateti
     try:
         picked = []
         for src in sources:
-            if is_korea_only(src) or not src.enabled:
+            if is_korea_only(src) or is_korea_backup(src) or not src.enabled:
                 continue
             rows = store.conn.execute(
                 "SELECT run_at, state FROM source_runs WHERE source_id = ? ORDER BY run_at DESC LIMIT 12", (src.id,)
@@ -434,7 +445,8 @@ def run(
     try:
         results = collect_all(sources, rules, store, http or Http(), now)
         if korea_db is not None and not (korea or catch_up or only):
-            relayed = select_sources(settings.sources, None, max_phase or settings.max_phase, korea=True)
+            relayed = [s for s in select_sources(settings.sources, None, max_phase or settings.max_phase, korea=True)
+                       if is_korea_only(s)]
             results += import_korea(store, korea_db, relayed, now)
             # GitHub 서버에서 접속하지 못한 곳을 한국 PC 가 최근에 읽어 두었으면 그 결과로 바꾼다
             by_id = {s.id: s for s in sources}

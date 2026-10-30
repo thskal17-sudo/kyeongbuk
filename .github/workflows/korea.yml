@@ -1,8 +1,9 @@
 name: 한국 PC 수집 (해외 차단 사이트)
 
 # 시·군 누리집 일부(도서관·평생학습관·청도·울릉·청송군청 등)는 해외 IP 를 막아 GitHub 수집 서버가 읽지 못한다.
-# 사무실·집의 한국 PC 에 설치한 GitHub 자체 실행기(라벨 korea)가 그 사이트(sources.yaml 의 korea_only)만 읽어
+# 사무실·집의 한국 PC 에 설치한 GitHub 자체 실행기(라벨 korea)가 그 사이트(sources.yaml 의 korea_only·korea_backup)만 읽어
 # state-korea 브랜치에 저장하면, 매일 메일 작업(daily.yml)이 가져와 한 메일로 보낸다. 설치 방법은 README 참고.
+# korea_backup 은 GitHub 서버가 국내 중계(KR_PROXY_URL)로 먼저 읽고, 접속하지 못한 날만 이 결과를 쓴다.
 on:
   schedule:
     # 매일 05:47 KST (= UTC 20:47). 매일 메일(06:17)보다 30분 먼저

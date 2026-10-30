@@ -134,7 +134,7 @@ def main(argv: list[str] | None = None) -> int:
         "--catch-up", action="store_true", help="보충 수집: --source 소스만 다시 수집하고 새 공고가 있을 때만 메일"
     )
     p_run.add_argument(
-        "--korea", action="store_true", help="한국 PC(자체 실행기)용: 해외 차단 소스(korea_only)만 수집해 --db 에 저장 (메일 없음)"
+        "--korea", action="store_true", help="한국 PC(자체 실행기)용: 해외 차단 소스(korea_only·korea_backup)만 수집해 --db 에 저장 (메일 없음)"
     )
     p_run.add_argument("--korea-db", default=None, help="한국 PC 가 저장해 둔 DB. 그 소스들의 공고·상태를 함께 보냄")
     p_run.add_argument(

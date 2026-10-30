@@ -475,3 +475,47 @@ def test_one_day_block_is_not_relayed(korea_env):
         now=datetime(2026, 9, 26, 5, 47, tzinfo=KST), korea=True, github_db=tmp_path / "db.sqlite",
     )
     assert [r.source_id for r in korea.results] == ["blocked"]
+
+
+def test_korea_backup_source_is_read_by_both_and_falls_back(korea_env, monkeypatch):
+    """korea_backup: GitHub 서버(국내 중계)가 읽고, 한국 PC 도 매일 읽어 두었다가 GitHub 서버가 접속 못 한 날만 쓴다."""
+    import requests
+
+    tmp_path, config, sent = korea_env
+    yaml_text = (config / "sources.yaml").read_text(encoding="utf-8")
+    (config / "sources.yaml").write_text(yaml_text.replace("korea_only: true", "korea_backup: true"), encoding="utf-8")
+
+    korea = pipeline.run(
+        db_path=tmp_path / "korea.db", out_dir=tmp_path / "out-korea", send_mail=False, config_dir=config,
+        now=datetime(2026, 9, 26, 5, 47, tzinfo=KST), korea=True,
+    )
+    assert [r.source_id for r in korea.results] == ["blocked"]
+
+    # 중계가 되는 날: GitHub 서버가 직접 읽은 결과를 쓰고, 한국 PC 결과는 가져오지 않는다
+    outcome = pipeline.run(
+        db_path=tmp_path / "db.sqlite", out_dir=tmp_path / "out", send_mail=False, config_dir=config, now=NOW,
+        korea_db=tmp_path / "korea.db",
+    )
+    blocked = [r for r in outcome.results if r.source_id == "blocked"]
+    assert len(blocked) == 1 and blocked[0].state == "정상" and not blocked[0].relayed
+
+    # 한국 PC 가 꺼져 있어도 GitHub 서버가 읽었으면 'PC미실행' 이 아니다
+    outcome = pipeline.run(
+        db_path=tmp_path / "db2.sqlite", out_dir=tmp_path / "out", send_mail=False, config_dir=config, now=NOW,
+        korea_db=tmp_path / "없음.db",
+    )
+    assert next(r for r in outcome.results if r.source_id == "blocked").state == "정상"
+
+    # 중계 서버가 꺼진 날: 접속하지 못하면 한국 PC 가 읽어 둔 결과로 바꾼다
+    class Down(Collector):
+        def collect(self):
+            raise requests.exceptions.ConnectTimeout("timed out")
+
+    monkeypatch.setitem(COLLECTORS, "fake_korea", Down)
+    outcome = pipeline.run(
+        db_path=tmp_path / "db3.sqlite", out_dir=tmp_path / "out", send_mail=False, config_dir=config, now=NOW,
+        korea_db=tmp_path / "korea.db",
+    )
+    blocked = next(r for r in outcome.results if r.source_id == "blocked")
+    assert blocked.state == "정상" and blocked.relayed and "한국 PC 가 대신 읽음" in blocked.error
+    assert "도서관 독서문화프로그램 강사 모집" in [p.title for p in outcome.new]
