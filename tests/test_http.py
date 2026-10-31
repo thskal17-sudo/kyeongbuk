@@ -232,3 +232,25 @@ def test_header_split_400_gives_up_after_one_retry(monkeypatch):
     with pytest.raises(requests.exceptions.HTTPError):
         client.get("https://eminwon.yd.go.kr/list")
     assert len(calls) == 2
+
+
+def test_header_split_400_with_escaped_quotes_also_retries(monkeypatch):
+    client = Http(min_interval=0)
+    calls = []
+
+    class _Bad(_Resp):
+        status_code = 400
+
+        def iter_content(self, chunk_size):
+            yield b"Request header field is missing &#39;:&#39; separator.<br />"
+
+        def raise_for_status(self):
+            raise requests.exceptions.HTTPError("400 Client Error")
+
+    def fake_request(method, url, **kwargs):
+        calls.append(url)
+        return _Bad() if len(calls) == 1 else _Resp()
+
+    monkeypatch.setattr(client.session, "request", fake_request)
+    assert client.get("https://eminwon.gbmg.go.kr/list").status_code == 200
+    assert len(calls) == 2

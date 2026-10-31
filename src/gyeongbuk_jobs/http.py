@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import socket
 import ssl
 import tempfile
@@ -60,8 +61,9 @@ class FirewallBlocked(requests.exceptions.ConnectionError):
 
 # 시·군 누리집 웹 방화벽 차단 화면 ('…contrary to the Web firewall security policies have been blocked.')
 _WAF_BLOCK = b"contrary to the Web firewall security policies"
-# 새올(Apache) 이 머리글 줄이 잘려 들어왔을 때 돌려주는 400 본문
-_HEADER_SPLIT = b"missing ':' separator"
+# 새올(Apache) 이 머리글 줄이 잘려 들어왔을 때 돌려주는 400 본문 ('Request header field is missing ':' separator.')
+# 따옴표가 &#39; 로 바뀌어 오기도 해서 앞뒤 낱말만 본다
+_HEADER_SPLIT = re.compile(rb"header field is missing .{0,12}separator")
 
 
 class Http:
@@ -154,10 +156,12 @@ class Http:
         if len(body) < 5000 and _WAF_BLOCK in body:
             self._unreachable.add(host)
             raise FirewallBlocked(f"웹 방화벽 차단 화면: {host}")
-        if resp.status_code == 400 and _HEADER_SPLIT in body and not _retried:
+        if resp.status_code == 400 and _HEADER_SPLIT.search(body) and not _retried:
             log.info("머리글이 잘렸다는 400 (%s): 짧은 머리글로 바로 다시 요청", host)
             self._short_headers.add(host)
             return self.request(method, url, _retried=True, **kwargs)
+        if resp.status_code == 400:  # 원인을 알 수 있게 짧은 400 응답 본문을 남긴다
+            log.info("400 응답 본문 (%s): %s", host, body[:300].decode("utf-8", "replace").replace("\n", " "))
         resp.raise_for_status()
         return resp
 
