@@ -2678,6 +2678,7 @@ sources:
       org_fixed: true
       include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 활동지도, 인력풀]
 
+  # 2026-10-31 확인: phyf.or.kr 이 어느 주소든 포항시청 첫 화면(www.pohang.go.kr/main.do)으로 넘어감 (중계·직접 모두, 10/30 부터 0건). 포항시 평생학습원과 같은 통합 포털 이전으로 보임. 재단 공지는 포항시청 기관단체 공지사항(pohang_agent_notice)에 올라오면 거기서 받음. 새 주소를 찾으면 다시 켬
   - id: phyf_recruit
     name: 포항시청소년재단 채용공고 (상담복지센터 집단강사 등)
     org_type: 청소년
@@ -2687,7 +2688,7 @@ sources:
     pages: 1
     keyword_filter: true
     phase: 3
-    enabled: true
+    enabled: false
     verified: true
     options:
       org_name: 포항시청소년재단
