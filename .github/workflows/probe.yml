@@ -16,6 +16,11 @@ on:
         type: choice
         options: [github, korea]
         default: github
+      proxy:
+        description: "probe.py 를 국내 중계 서버(KR_PROXY_URL)를 거쳐 돌릴지 (check-source 는 늘 거침)"
+        type: choice
+        options: ["off", "on"]
+        default: "off"
   # 후보 주소 목록(scripts/probe_urls.txt)을 바꿔 올리면 그 주소들에 게시판 파서를 돌려 본다
   push:
     paths:
@@ -50,6 +55,7 @@ jobs:
         env:
           PYTHONUNBUFFERED: "1"
           PROBE_ARGS: ${{ github.event.inputs.args }}
+          KR_PROXY_URL: ${{ github.event.inputs.proxy == 'on' && secrets.KR_PROXY_URL || '' }}
       - if: github.event_name == 'workflow_dispatch' && github.event.inputs.check != ''
         run: '"$PY" -m gyeongbuk_jobs check-source $CHECK_IDS'
         env:
