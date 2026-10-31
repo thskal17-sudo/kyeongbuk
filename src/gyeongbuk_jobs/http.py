@@ -11,6 +11,8 @@ Access) 항목에서 중간 인증서를 내려받아 신뢰 목록(certifi)에 
 
 일부 새올 서버(부산판에서 본 남구·사상구)는 요청 머리글이 길면 '400 Bad Request (missing ':' separator)' 를 돌려준다.
 sources.yaml 에서 short_headers: true 로 지정한 호스트에는 Accept-Language 머리글을 빼고 보낸다.
+경북 새올(문경·고령·영천·영덕)은 같은 요청에도 가끔만 이렇게 답한다 (머리글 한 줄이 'o;q=0.9' 처럼 잘려 들어감).
+이 400 을 받으면 그 호스트를 short_headers 로 돌리고 그 자리에서 한 번 더 보낸다.
 
 접속 자체가 안 되는 서버(해외 접속 차단·장애)는 기다리는 시간이 전체 실행 시간을 잡아먹는다.
 연결 대기는 10초씩 두 번까지만 하고, 한 번 접속에 실패한 서버는 같은 실행 안에서 다시 기다리지
@@ -58,6 +60,8 @@ class FirewallBlocked(requests.exceptions.ConnectionError):
 
 # 시·군 누리집 웹 방화벽 차단 화면 ('…contrary to the Web firewall security policies have been blocked.')
 _WAF_BLOCK = b"contrary to the Web firewall security policies"
+# 새올(Apache) 이 머리글 줄이 잘려 들어왔을 때 돌려주는 400 본문
+_HEADER_SPLIT = b"missing ':' separator"
 
 
 class Http:
@@ -120,7 +124,7 @@ class Http:
     def post(self, url: str, **kwargs) -> requests.Response:
         return self.request("POST", url, **kwargs)
 
-    def request(self, method: str, url: str, **kwargs) -> requests.Response:
+    def request(self, method: str, url: str, _retried: bool = False, **kwargs) -> requests.Response:
         host = urlsplit(url).hostname or ""
         if host in self._unreachable:
             raise HostUnreachable(f"앞서 접속하지 못한 서버라 건너뜀: {host}")
@@ -150,6 +154,10 @@ class Http:
         if len(body) < 5000 and _WAF_BLOCK in body:
             self._unreachable.add(host)
             raise FirewallBlocked(f"웹 방화벽 차단 화면: {host}")
+        if resp.status_code == 400 and _HEADER_SPLIT in body and not _retried:
+            log.info("머리글이 잘렸다는 400 (%s): 짧은 머리글로 바로 다시 요청", host)
+            self._short_headers.add(host)
+            return self.request(method, url, _retried=True, **kwargs)
         resp.raise_for_status()
         return resp
 

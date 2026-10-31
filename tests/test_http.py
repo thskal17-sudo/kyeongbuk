@@ -184,3 +184,51 @@ def test_kr_proxy_auth_failure_disables_proxy_for_run(monkeypatch):
 def test_no_proxy_without_env(monkeypatch):
     monkeypatch.delenv("KR_PROXY_URL", raising=False)
     assert Http(min_interval=0).kr_proxy is None
+
+
+def test_header_split_400_retries_once_with_short_headers(monkeypatch):
+    """새올이 가끔 'missing ':' separator' 400 을 주면 Accept-Language 를 빼고 그 자리에서 다시 요청한다."""
+    client = Http(min_interval=0)
+    sent = []
+
+    class _Bad(_Resp):
+        status_code = 400
+
+        def iter_content(self, chunk_size):
+            yield b"<h1>Bad Request</h1> Request header field is missing ':' separator.<pre> o;q=0.9</pre>"
+
+        def raise_for_status(self):
+            raise requests.exceptions.HTTPError("400 Client Error")
+
+    def fake_request(method, url, **kwargs):
+        sent.append((kwargs.get("headers") or {}).get("Accept-Language", "기본"))
+        return _Bad() if len(sent) == 1 else _Resp()
+
+    monkeypatch.setattr(client.session, "request", fake_request)
+    assert client.get("https://eminwon.yd.go.kr/list").status_code == 200
+    assert sent == ["기본", None]  # 두 번째는 Accept-Language 를 빼고 보냄
+    client.get("https://eminwon.yd.go.kr/list2")
+    assert sent[-1] is None  # 같은 실행의 다음 요청도 짧은 머리글
+
+
+def test_header_split_400_gives_up_after_one_retry(monkeypatch):
+    client = Http(min_interval=0)
+    calls = []
+
+    class _Bad(_Resp):
+        status_code = 400
+
+        def iter_content(self, chunk_size):
+            yield b"Request header field is missing ':' separator."
+
+        def raise_for_status(self):
+            raise requests.exceptions.HTTPError("400 Client Error")
+
+    def fake_request(method, url, **kwargs):
+        calls.append(url)
+        return _Bad()
+
+    monkeypatch.setattr(client.session, "request", fake_request)
+    with pytest.raises(requests.exceptions.HTTPError):
+        client.get("https://eminwon.yd.go.kr/list")
+    assert len(calls) == 2
