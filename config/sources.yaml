@@ -647,24 +647,6 @@ sources:
       key_param: nttSn
       org_name: 경상북도울릉교육지원청
 
-  - id: mg_edu_hire
-    name: 문경교육지원청 채용공고
-    org_type: 교육청·학교
-    district: 문경시
-    collector: generic_board
-    url: "https://www.gbe.kr/mg/na/ntt/selectNttList.do?mi=20813&bbsId=5655"
-    pages: 1
-    keyword_filter: true
-    phase: 1
-    enabled: true
-    verified: true
-    options:
-      page_param: currPage
-      link_attr: data-id
-      link_template: "https://www.gbe.kr/mg/na/ntt/selectNttInfo.do?mi=20813&bbsId=5655&nttSn={0}"
-      key_param: nttSn
-      org_name: 경상북도문경교육지원청
-
   - id: cd_edu_hire
     name: 청도교육지원청 채용정보
     org_type: 교육청·학교
@@ -682,6 +664,25 @@ sources:
       link_template: "https://www.gbe.kr/cd/na/ntt/selectNttInfo.do?mi=10467&bbsId=3251&nttSn={0}"
       key_param: nttSn
       org_name: 경상북도청도교육지원청
+
+  - id: mg_edu_hire
+    name: 문경교육지원청 채용공고
+    org_type: 교육청·학교
+    district: 문경시
+    collector: generic_board
+    url: "https://www.gbe.kr/mg/na/ntt/selectNttList.do?mi=20813&bbsId=5655"
+    pages: 1
+    keyword_filter: true
+    phase: 1
+    enabled: true
+    verified: true
+    options:
+      page_param: currPage
+      link_attr: data-id
+      link_template: "https://www.gbe.kr/mg/na/ntt/selectNttInfo.do?mi=20813&bbsId=5655&nttSn={0}"
+      key_param: nttSn
+      org_name: 경상북도문경교육지원청
+      use_label: false
 
   - id: yd_edu_other
     name: 영덕교육지원청 기타 구인란

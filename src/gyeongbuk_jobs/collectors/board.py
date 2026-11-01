@@ -120,7 +120,7 @@ class BoardCollector(Collector):
                         district=infer_district(f"{r.district} {r.org}", self.source.district),
                         posted_date=r.posted,
                         deadline=r.deadline,
-                        label=r.label,
+                        label=r.label if opts.get("use_label", True) else "",  # use_label: false = 분류 칸이 강사 판별에 안 맞는 게시판
                         detail_url=r.url if r.detail_ok and opts.get("detail_get", True) else None,
                     )
                 )
