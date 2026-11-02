@@ -164,3 +164,47 @@ def test_work24_excludes_private_training_schools():
     assert not keep("한국폴리텍대학 구미캠퍼스")
     assert not keep("대한상공회의소 경북인력개발원")
     assert keep("경상북도교육청")
+
+
+class _Work24Http:
+    """고용24 목록·상세 API 흉내. 목록 제목은 앞·뒤가 잘려 '...' 가 붙어 온다 (2026-11-02 실제 응답 모양)."""
+
+    LIST = """<?xml version="1.0" encoding="UTF-8"?><wantedRoot><total>3</total>
+<wanted><wantedAuthNo>K1</wantedAuthNo><company>한동대학교</company><title>...어교실(한국어강사/영어강사) 일반계약직 채용 공고</title><region>경북 포항시 북구</region><regDt>26-10-27</regDt><closeDt>26-11-02</closeDt><infoSvc>VALIDATION</infoSvc><wantedInfoUrl>https://www.work24.go.kr/x1</wantedInfoUrl></wanted>
+<wanted><wantedAuthNo>K2</wantedAuthNo><company>포항시청소년수련관</company><title>청소년 프로그램 강사 모집 (경력자 우대...</title><region>경북 포항시</region><regDt>26-10-27</regDt><closeDt>26-11-10</closeDt><wantedInfoUrl>https://www.work24.go.kr/x2</wantedInfoUrl></wanted>
+<wanted><wantedAuthNo>K3</wantedAuthNo><company>경주시평생학습관</company><title>평생학습 강사 모집</title><region>경북 경주시</region><regDt>26-10-27</regDt><closeDt>26-11-10</closeDt><wantedInfoUrl>https://www.work24.go.kr/x3</wantedInfoUrl></wanted>
+</wantedRoot>"""
+    DETAIL = {
+        "K1": "<wantedDtl><wantedAuthNo>K1</wantedAuthNo><wantedInfo><wantedTitle>[한동대학교] 한국어교실(한국어강사/영어강사) 일반계약직 채용 공고</wantedTitle></wantedInfo></wantedDtl>",
+        "K2": "<wantedDtl><message>정보가 존재하지 않습니다.</message><messageCd>006</messageCd></wantedDtl>",
+    }
+
+    def __init__(self):
+        self.detail_calls = []
+
+    def get(self, url, params=None, **kw):
+        if params.get("callTp") == "D":
+            self.detail_calls.append(params["wantedAuthNo"])
+            assert params["authKey"] == "key" and params["infoSvc"] == "VALIDATION"
+            return _Resp(url, self.DETAIL[params["wantedAuthNo"]])
+        return _Resp(url, self.LIST)
+
+
+def test_work24_fetches_full_title_when_list_title_is_cut(monkeypatch):
+    from gyeongbuk_jobs.collectors.work24_api import Work24Collector, looks_cut, parse_work24_title
+    from gyeongbuk_jobs.config import Source
+
+    assert looks_cut("...어교실 채용") and looks_cut("강사 모집 (우대...") and looks_cut("…강사")
+    assert not looks_cut("평생학습 강사 모집") and not looks_cut("1...2 강사")
+    assert parse_work24_title(b"<oops") is None
+
+    monkeypatch.setenv("WORK24_API_KEY", "key")
+    src = Source("work24_api", "고용24", "work24_api", options={"max_pages": 1})
+    http = _Work24Http()
+    items = Work24Collector(src, http, date(2026, 11, 2)).collect()
+    assert [p.title for p in items] == [
+        "[한동대학교] 한국어교실(한국어강사/영어강사) 일반계약직 채용 공고",  # 상세 API 의 전체 제목
+        "청소년 프로그램 강사 모집 (경력자 우대...",  # 상세가 없으면 목록 제목 그대로
+        "평생학습 강사 모집",
+    ]
+    assert http.detail_calls == ["K1", "K2"]  # 잘린 제목만 상세를 묻는다
