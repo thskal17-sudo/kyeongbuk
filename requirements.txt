@@ -1,5 +1,7 @@
 requests>=2.31
 beautifulsoup4>=4.12
+# 3.0 은 :has() 안의 'td a' 같은 선택자(row_selector)를 거부한다. 부산판과 같이 묶는다
+soupsieve>=2.4,<3
 lxml>=5.0
 openpyxl>=3.1
 PyYAML>=6.0
