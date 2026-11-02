@@ -161,7 +161,8 @@ class Http:
             self._short_headers.add(host)
             return self.request(method, url, _retried=True, **kwargs)
         if resp.status_code == 400:  # 원인을 알 수 있게 짧은 400 응답 본문을 남긴다
-            log.info("400 응답 본문 (%s): %s", host, body[:300].decode("utf-8", "replace").replace("\n", " "))
+            text = re.sub(rb"(?is)<(style|script)\b.*?</\1>|<[^>]+>", b" ", body[:5000])
+            log.info("400 응답 본문 (%s): %s", host, " ".join(text.decode("utf-8", "replace").split())[:300])
         resp.raise_for_status()
         return resp
 
