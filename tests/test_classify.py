@@ -78,3 +78,12 @@ def test_infer_org_type_and_district():
     assert infer_district("고령도서관") == "고령군"
     assert infer_district("영양초등학교") == "영양군"
     assert infer_district("영양군청") == "영양군"
+
+
+def test_place_name_and_public_lecture_are_not_jobs(rules):
+    """포항 구룡포읍 '강사리'(마을 이름) 고시와 유명 강사 무료 강연 안내는 강사 공고가 아니다 (2026-11-05)."""
+    from gyeongbuk_jobs.classify import judge
+
+    assert judge("공유수면 점용사용 실시계획 준공검사에 관한 고시(강사2리항 외 5개소 어항시설사업)", rules, True) is None
+    assert judge("(포항공대 무료강연) 1타강사 '손사탐'이자 인터넷 강의의 시작인 손주은 메가스터디 그룹의 회장", rules, True) is None
+    assert judge("2026년 주민자치센터 프로그램 강사 모집 공고", rules, True) == "모집중"
