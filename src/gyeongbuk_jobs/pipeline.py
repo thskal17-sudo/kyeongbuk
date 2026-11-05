@@ -11,6 +11,7 @@ from pathlib import Path
 import requests
 
 from .attachments import extract_text, find_attachments
+from .body import body_text, notice_excerpt
 from .classify import categorize, judge
 from .collectors import COLLECTORS, NotConfigured
 from .config import DEFAULT_CONFIG_DIR, Rules, Source, load_rules, load_settings, source_rules
@@ -306,6 +307,10 @@ def _collect_source(
             if not notice_read:
                 notice = _attachment_text(collector, soup, p, budget)
             info = extract_info(notice, soup.get_text("\n"))
+            # 강사잇다 '상세 내용': 상세 페이지 본문, 본문 없이 첨부만 올린 글이면 첨부 공고문 글 (body.py)
+            body = body_text(soup, p.title) or notice_excerpt(notice)
+            if body:
+                info["body"] = body
             store.set_info(p.uid, {**info, "v": INFO_VERSION})
             log.info("공고문 정보 %s → %s", p.title, info or "못 찾음")
 
