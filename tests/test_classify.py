@@ -87,3 +87,15 @@ def test_place_name_and_public_lecture_are_not_jobs(rules):
     assert judge("공유수면 점용사용 실시계획 준공검사에 관한 고시(강사2리항 외 5개소 어항시설사업)", rules, True) is None
     assert judge("(포항공대 무료강연) 1타강사 '손사탐'이자 인터넷 강의의 시작인 손주은 메가스터디 그룹의 회장", rules, True) is None
     assert judge("2026년 주민자치센터 프로그램 강사 모집 공고", rules, True) == "모집중"
+
+
+def test_source_exclude_adds_terms(rules):
+    """전국 기관 게시판(exclude 옵션)은 다른 지역 지사 공고를 뺀다. 지역이 없는 전국 모집은 남긴다."""
+    from gyeongbuk_jobs.config import Source, load_settings, source_rules
+
+    nps = next(s for s in load_settings().sources if s.id == "nps_recruit")
+    narrow = source_rules(rules, nps)
+    assert judge("2027년도 노후준비 민간 전문강사 선발 모집 안내", narrow, True) == "모집중"
+    assert judge("[국민연금공단 부산지역본부] 노후준비 강사 채용 공고", narrow, True) is None
+    assert judge("[국민연금공단 부산지역본부] 노후준비 강사 채용 공고", rules, True) == "모집중"
+    assert source_rules(rules, Source("x", "x", "generic_board")) is rules

@@ -42,8 +42,13 @@ class Rules:
 
 def source_rules(rules: Rules, src: Source) -> Rules:
     """게시판에 include 옵션이 있으면 포함 키워드만 그것으로 바꾼 규칙
-    (이용자 공지가 많은 게시판에서 '수영강습 접수 안내' 같은 글이 '강습'으로 걸리지 않게)."""
-    return replace(rules, include=list(src.options["include"])) if src.options.get("include") else rules
+    (이용자 공지가 많은 게시판에서 '수영강습 접수 안내' 같은 글이 '강습'으로 걸리지 않게).
+    exclude 옵션은 공통 제외 키워드에 더한다 (전국 기관 게시판에서 다른 지역 지사 공고를 뺄 때)."""
+    if src.options.get("include"):
+        rules = replace(rules, include=list(src.options["include"]))
+    if src.options.get("exclude"):
+        rules = replace(rules, exclude=rules.exclude + list(src.options["exclude"]))
+    return rules
 
 
 @dataclass

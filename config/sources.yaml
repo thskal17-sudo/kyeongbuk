@@ -98,6 +98,80 @@ sources:
       page_param: pageNo
       key_param: idx
 
+  # ─────────────────────────────── 국가 공공기관·연수원·진흥원 게시판 (강사 위촉·강사 인력풀)
+  # 클린아이·잡알리오에는 정규직 채용 위주로 올라오고 외래강사 위촉·강사풀 공고는 기관 게시판에만 올라오는 경우가 많다.
+  # 2026-11-22 probe --discover 로 공단·출연기관 25곳의 공지·채용 게시판을 훑어 강사 글이 올라오는 곳만 넣음.
+  # 못 넣은 곳: 안전보건공단·한국도로공사·한국수력원자력·원자력환경공단 등은 목록을 자바스크립트로 그려 게시판 주소로 읽을 수 없고,
+  # 소상공인시장진흥공단은 TLS 접속이 거절됨. 장애인고용공단 외부강사 모집 게시판도 목록이 스크립트로 그려짐.
+
+  - id: kotsa_recruit
+    name: 한국교통안전공단 채용공고 (외래강사 위촉 등)
+    org_type: 국가·공공기관
+    district: 경북전체
+    collector: generic_board
+    url: "https://main.kotsa.or.kr/portal/bbs/recruit_list.do?menuCode=06030500"
+    pages: 1
+    keyword_filter: true
+    phase: 1
+    enabled: true
+    verified: true
+    # 본사 김천. 2026-04 '자동차검사 기술인력 법정교육 외래강사 위촉공고' 등. 제목 링크는 fnView('recruit','','글번호','1','','','06030500','Y')
+    options:
+      link_template: "https://main.kotsa.or.kr/portal/bbs/{0}_view.do?bbscCode={0}&bbscSeqn={2}&pageNumb=1&menuCode={6}&viewYsno=Y"
+      key_param: bbscSeqn
+      org_name: 한국교통안전공단
+      org_fixed: true
+
+  - id: nps_recruit
+    name: 국민연금공단 채용공고 (노후준비 민간 전문강사 등)
+    org_type: 국가·공공기관
+    district: 경북전체
+    collector: generic_board
+    url: "https://www.nps.or.kr/pnsgdnc/hiregdnc/getOHAE0004M0List.do?menuId=MN24000969"
+    pages: 1
+    keyword_filter: true
+    phase: 1
+    enabled: true
+    verified: true
+    # 해마다 9월 '노후준비 민간 전문강사 선발 모집'(전국, 경북 포함). 다른 지역본부 공고는 지역 이름으로 뺀다
+    options:
+      org_prefix: 국민연금공단
+      exclude: [서울, 부산, 인천, 광주, 대전, 울산, 세종, 경기, 경인, 강원, 충북, 충남, 충청, 전북, 전남, 전라, 경남, 제주]
+
+  - id: gbeti_instructor
+    name: 경상북도교육청연수원 강사추천 (강사풀제 운영 계획)
+    org_type: 교육청·학교
+    district: 경북전체
+    collector: generic_board
+    url: "https://www.gbeti.or.kr/common/bbs/management/selectCmmnBBSMgmtList.do?menuId=1000000308&bbsId=BBSMSTR_000000000361&pageIndex=1"
+    pages: 1
+    keyword_filter: true
+    phase: 1
+    enabled: true
+    verified: true
+    # 해마다 3월 '○○년 경상북도교육청연수원 강사풀제 운영 계획'. 제목 링크는 fn_egov_select('글번호')
+    options:
+      link_template: "https://www.gbeti.or.kr/common/bbs/management/selectCmmnBBSMgmtView.do?menuId=1000000308&bbsId=BBSMSTR_000000000361&pageIndex=1&bbscttId={0}"
+      key_param: bbscttId
+      org_name: 경상북도교육청연수원
+      org_fixed: true
+
+  - id: gcube_notice
+    name: 경북문화재단 콘텐츠진흥원 알림마당 (웹툰캠퍼스 강사 등)
+    org_type: 평생교육·도서관
+    district: 경북전체
+    collector: generic_board
+    url: "https://gcube.or.kr:1021/home/sub1/sub1.asp"
+    pages: 1
+    keyword_filter: true
+    phase: 1
+    enabled: true
+    verified: true
+    # 2023-03 '[공고] 경북웹툰캠퍼스 웹툰 강사 및 작가 명단 모집' 등. 국내 중계로는 1021 포트에 닿지 않아 바로 접속함
+    options:
+      org_name: 경북문화재단 콘텐츠진흥원
+      org_fixed: true
+
   # ─────────────────────────────── 경북교육청 본청 (지역 칸이 있어 시·군을 알 수 있음)
 
   # 경북교육청 게시판(na/ntt)은 제목 링크가 <a data-id="글번호" href="javascript:"> 이고 상세는 selectNttInfo.do 로 GET 으로 열린다
