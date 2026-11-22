@@ -10,6 +10,8 @@ config/sources.yaml 의 각 소스에 실제로 접속해 보고, 게시판 HTML
     python scripts/probe.py --url URL ...   # 임의 URL 상세 구조
     python scripts/probe.py --parse --url-file scripts/probe_urls.txt
                                             # 여러 URL 에 실제 게시판 파서를 돌려 결과만 짧게 출력
+    python scripts/probe.py --discover --url https://기관첫화면 ...
+                                            # 첫 화면 메뉴에서 공지·채용 게시판을 찾아, 첫 쪽에 강사·인력풀 글이 있는지 출력
 """
 from __future__ import annotations
 
@@ -276,6 +278,62 @@ def parse_report(label: str, url: str) -> None:
                 print(f"  link: {describe_anchor(a)}")
 
 
+BOARD_MENU = re.compile(r"공지|채용|공고|모집|알림|인력풀|강사|구인")
+BOARD_SKIP = re.compile(r"입찰|계약|낙찰|결과|사업공고|보도|언론|홍보|갤러리|사진|영상|FAQ|질문|민원|칭찬|설문")
+TEACHER = re.compile(r"강사|인력\s*풀|위촉|교수요원|컨설턴트|지도사|교관|튜터|멘토|전문위원|해설사")
+
+
+def discover_report(start: str, limit: int = 12) -> None:
+    """기관 첫 화면 메뉴에서 공지·채용 게시판을 찾아, 각 게시판 첫 쪽에 강사·인력풀 글이 있는지 짧게 보여 준다."""
+    from urllib.parse import urljoin, urlsplit
+
+    print("=" * 100)
+    print(f"DISCOVER {start}")
+    try:
+        r = fetch(start)
+    except Exception as exc:  # noqa: BLE001
+        print(f"  ERROR {type(exc).__name__}: {clip(str(exc), 300)}")
+        return
+    print(f"  status={r.status_code} bytes={len(r.content)} final={r.url}")
+    soup = BeautifulSoup(r.content, "lxml")
+    print(f"  <title>: {clip(soup.title.get_text() if soup.title else '')}")
+    site = ".".join((urlsplit(r.url).hostname or "").split(".")[-3:])
+    boards: dict[str, str] = {}
+    for a in soup.find_all("a"):
+        text = clip(a.get_text(" "), 40)
+        href = (a.get("href") or "").strip()
+        if not text or not BOARD_MENU.search(text) or BOARD_SKIP.search(text):
+            continue
+        if not href or href.startswith(("#", "javascript", "mailto")):
+            continue
+        url = urljoin(r.url, href)
+        if site not in (urlsplit(url).hostname or "") or url in boards:
+            continue
+        boards[url] = text
+        if len(boards) >= limit:
+            break
+    print(f"  게시판 후보 {len(boards)}개")
+    for url, text in boards.items():
+        try:
+            b = fetch(url)
+        except Exception as exc:  # noqa: BLE001
+            print(f"  - [{text}] {url}\n      ERROR {type(exc).__name__}: {clip(str(exc), 150)}")
+            continue
+        rows = parse_board(b.content, b.url, {}, today_kst()) if b.status_code == 200 else []
+        hits = [row for row in rows if TEACHER.search(row.title)]
+        if not rows and b.status_code == 200:  # 표가 아닌 게시판: 링크 글자에서만 찾는다
+            page = BeautifulSoup(b.content, "lxml")
+            hits_text = [clip(x.get_text(" "), 70) for x in page.find_all("a") if TEACHER.search(x.get_text(" "))][:5]
+            print(f"  - [{text}] {b.status_code} rows=0 {b.url}")
+            for t in hits_text:
+                print(f"      ? {t}")
+            continue
+        dates = sorted((row.posted for row in rows if row.posted), reverse=True)
+        print(f"  - [{text}] {b.status_code} rows={len(rows)} 최근={dates[0] if dates else '-'} 강사글={len(hits)} {b.url}")
+        for row in hits[:6]:
+            print(f"      * {row.posted} {clip(row.title, 80)}")
+
+
 def attach_report(url: str, template: str | None) -> None:
     """상세 페이지의 첨부 공고문을 내려받아 꺼낸 글자 중 접수·기간 관련 줄과 찾은 마감일을 보여준다."""
     from gyeongbuk_jobs.attachments import extract_text, find_attachments
@@ -325,6 +383,7 @@ def main() -> int:
     parser.add_argument("--short-headers", action="store_true", help="--url 호스트에 짧은 요청 머리글 (새올 400 대비)")
     parser.add_argument("--form-post", default=None, help="--parse 에서 이 셀렉터의 폼을 POST 한 응답을 본다 (예: form#frm)")
     parser.add_argument("--data", default="", help="--form-post 에 더할 값 (a=1&b=2)")
+    parser.add_argument("--discover", action="store_true", help="--url(기관 첫 화면)에서 공지·채용 게시판을 찾아 강사 글이 있는지 출력")
     parser.add_argument("--attach", action="store_true", help="--url(상세 페이지)의 첨부 공고문을 내려받아 글자와 마감일 확인")
     parser.add_argument("--attach-template", default=None, help="--attach 에서 쓸 첨부 주소 틀 (sources.yaml 의 attachment_template)")
     args = parser.parse_args()
@@ -353,6 +412,11 @@ def main() -> int:
     if args.legacy_tls or args.short_headers:
         for url in args.url:
             HTTP.setup_host(url, {"legacy_tls": args.legacy_tls, "short_headers": args.short_headers})
+    if args.discover:
+        logging.basicConfig(level=logging.WARNING, format="  [%(levelname)s] %(message)s")
+        for url in args.url:
+            discover_report(url)
+        return 0
     if args.attach:
         for url in args.url:
             attach_report(url, args.attach_template)
