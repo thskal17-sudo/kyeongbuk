@@ -163,12 +163,28 @@ class Http:
         if resp.status_code == 400:  # 원인을 알 수 있게 짧은 400 응답 본문을 남긴다
             text = re.sub(rb"(?is)<(style|script)\b.*?</\1>|<[^>]+>", b" ", body[:5000])
             log.info("400 응답 본문 (%s): %s", host, " ".join(text.decode("utf-8", "replace").split())[:300])
+            if not _retried and self._via_relay(host, kwargs):
+                # 봉화군 새올처럼 중계 출구 주소를 웹 방화벽이 400 으로 막는 때가 있다: 바로 접속으로 한 번 더
+                log.info("중계로 400 (%s): 바로 접속으로 다시 요청", host)
+                self._direct_hosts.add(host)
+                try:
+                    retry = self.request(method, url, _retried=True, **kwargs)
+                except requests.exceptions.RequestException as exc:
+                    log.info("바로 접속도 실패 (%s): %s", host, type(exc).__name__)
+                    self._direct_hosts.discard(host)  # 다음 요청은 다시 중계로
+                    self._unreachable.discard(host)
+                else:
+                    log.info("바로 접속은 성공 (%s): 이번 실행은 이 사이트를 바로 접속", host)
+                    return retry
         resp.raise_for_status()
         return resp
 
+    def _via_relay(self, host: str, kwargs: dict) -> bool:
+        return bool(self.kr_proxy) and host.endswith(".kr") and host not in self._direct_hosts and "proxies" not in kwargs
+
     def _send(self, method: str, url: str, host: str, kwargs: dict) -> requests.Response:
         """한국 사이트는 국내 중계(KR_PROXY_URL)를 거쳐 보내고, 중계가 안 되면 바로 보낸다."""
-        if not self.kr_proxy or not host.endswith(".kr") or host in self._direct_hosts or "proxies" in kwargs:
+        if not self._via_relay(host, kwargs):
             return self.session.request(method, url, **kwargs)
         try:
             return self.session.request(method, url, proxies={"http": self.kr_proxy, "https": self.kr_proxy}, **kwargs)
@@ -212,7 +228,9 @@ class Http:
 
     def _bundle_with_intermediates(self, host: str, port: int) -> str | None:
         try:
-            pems = fetch_intermediate_pems(host, port, self.session)
+            # 국내 중계를 쓰는 사이트는 인증서도 중계를 거쳐 받는다 (구미시립도서관처럼 해외에서 바로 붙으면 응답이 없는 곳)
+            via = self.kr_proxy if host.endswith(".kr") and host not in self._direct_hosts else None
+            pems = fetch_intermediate_pems(host, port, self.session, proxy=via)
         except Exception as exc:  # noqa: BLE001 - 보완 실패 시 원래 SSL 오류를 그대로 올린다
             log.warning("중간 인증서 보완 실패 %s: %s", host, exc)
             return None
@@ -255,8 +273,38 @@ def _is_chain_error(exc: Exception) -> bool:
     )
 
 
-def fetch_intermediate_pems(host: str, port: int, session: requests.Session) -> list[str]:
-    """서버 인증서의 AIA 'CA Issuers' 주소를 따라가며 중간 인증서를 PEM 목록으로 받는다."""
+def _open_socket(host: str, port: int, proxy: str | None, timeout: float = 15) -> socket.socket:
+    """host:port 로 가는 TCP 연결. proxy(http://아이디:비밀번호@IP:포트)가 있으면 CONNECT 터널로 연다."""
+    if not proxy:
+        return socket.create_connection((host, port), timeout=timeout)
+    import base64
+
+    from urllib.parse import unquote
+
+    p = urlsplit(proxy)
+    sock = socket.create_connection((p.hostname, p.port or 8080), timeout=timeout)
+    head = f"CONNECT {host}:{port} HTTP/1.1\r\nHost: {host}:{port}\r\n"
+    if p.username:
+        cred = base64.b64encode(f"{unquote(p.username)}:{unquote(p.password or '')}".encode()).decode()
+        head += f"Proxy-Authorization: Basic {cred}\r\n"
+    sock.sendall((head + "\r\n").encode())
+    reply = b""
+    while b"\r\n\r\n" not in reply and len(reply) < 8192:
+        chunk = sock.recv(1024)
+        if not chunk:
+            break
+        reply += chunk
+    status = reply.split(b"\r\n", 1)[0]
+    if b" 200" not in status:
+        sock.close()
+        raise OSError(f"중계 터널 실패: {status[:60]!r}")
+    return sock
+
+
+def fetch_intermediate_pems(host: str, port: int, session: requests.Session, proxy: str | None = None) -> list[str]:
+    """서버 인증서의 AIA 'CA Issuers' 주소를 따라가며 중간 인증서를 PEM 목록으로 받는다.
+
+    proxy 가 있으면 서버 인증서를 그 중계(CONNECT 터널)를 거쳐 받는다. CA 주소는 해외에서도 열리므로 바로 받는다."""
     from cryptography import x509
     from cryptography.hazmat.primitives.serialization import Encoding, pkcs7
     from cryptography.x509.oid import AuthorityInformationAccessOID, ExtensionOID
@@ -264,7 +312,7 @@ def fetch_intermediate_pems(host: str, port: int, session: requests.Session) -> 
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE
-    with socket.create_connection((host, port), timeout=15) as sock:
+    with _open_socket(host, port, proxy) as sock:
         with ctx.wrap_socket(sock, server_hostname=host) as tls:
             der = tls.getpeercert(binary_form=True)
     cert = x509.load_der_x509_certificate(der)

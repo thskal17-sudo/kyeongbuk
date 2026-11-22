@@ -254,3 +254,72 @@ def test_header_split_400_with_escaped_quotes_also_retries(monkeypatch):
     monkeypatch.setattr(client.session, "request", fake_request)
     assert client.get("https://eminwon.gbmg.go.kr/list").status_code == 200
     assert len(calls) == 2
+
+
+def test_open_socket_tunnels_through_kr_proxy():
+    """중간 인증서를 받을 때도 국내 중계를 쓰면 CONNECT 터널(아이디·비밀번호 포함)로 연다."""
+    import socket
+    import threading
+
+    from gyeongbuk_jobs.http import _open_socket
+
+    server = socket.socket()
+    server.bind(("127.0.0.1", 0))
+    server.listen(1)
+    seen = {}
+
+    def serve():
+        conn, _ = server.accept()
+        seen["head"] = conn.recv(4096).decode()
+        conn.sendall(b"HTTP/1.1 200 Connection established\r\n\r\n")
+        conn.close()
+
+    t = threading.Thread(target=serve)
+    t.start()
+    port = server.getsockname()[1]
+    sock = _open_socket("lib.gumi.go.kr", 443, f"http://u:p%40w@127.0.0.1:{port}")
+    sock.close()
+    t.join()
+    server.close()
+    assert seen["head"].startswith("CONNECT lib.gumi.go.kr:443 HTTP/1.1")
+    assert "Proxy-Authorization: Basic dTpwQHc=" in seen["head"]  # base64("u:p@w")
+
+
+class _Generic400(_Resp):
+    status_code = 400
+
+    def iter_content(self, chunk_size):
+        yield b"<h1>400 Bad Request</h1> The server cannot or will not process the request"
+
+    def raise_for_status(self):
+        raise requests.exceptions.HTTPError("400 Client Error")
+
+
+def test_relay_400_retries_direct_and_remembers(monkeypatch):
+    """봉화군 새올처럼 중계 출구만 400 으로 막으면 바로 접속으로 다시 받고, 이번 실행은 바로 접속한다."""
+    client = Http(min_interval=0, kr_proxy="http://u:p@1.2.3.4:8888")
+    via = []
+
+    def fake_request(method, url, **kwargs):
+        via.append("proxies" in kwargs)
+        return _Generic400() if "proxies" in kwargs else _Resp()
+
+    monkeypatch.setattr(client.session, "request", fake_request)
+    assert client.get("https://eminwon.bonghwa.go.kr/list").status_code == 200
+    client.get("https://eminwon.bonghwa.go.kr/list?page=2")
+    assert via == [True, False, False]
+
+
+def test_relay_400_and_direct_failure_keeps_relay(monkeypatch):
+    client = Http(min_interval=0, kr_proxy="http://u:p@1.2.3.4:8888")
+    via = []
+
+    def fake_request(method, url, **kwargs):
+        via.append("proxies" in kwargs)
+        return _Generic400()
+
+    monkeypatch.setattr(client.session, "request", fake_request)
+    with pytest.raises(requests.exceptions.HTTPError):
+        client.get("https://eminwon.bonghwa.go.kr/list")
+    assert via == [True, False]
+    assert "eminwon.bonghwa.go.kr" not in client._direct_hosts  # noqa: SLF001
