@@ -216,6 +216,7 @@ def parse_report(label: str, url: str) -> None:
         print(f"  ERROR {type(exc).__name__}: {clip(str(exc), 300)}")
         return
     print(f"  status={r.status_code} bytes={len(r.content)} final={r.url}")
+    print(f"  cookies={sorted({(c.domain, c.name) for c in HTTP.session.cookies})}")
     if len(r.content) < 1500:
         print(f"  body: {clip(r.content.decode('utf-8', 'replace'), 1500)}")
         return
