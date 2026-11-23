@@ -2378,6 +2378,7 @@ sources:
     verified: true
     options:
       org_name: 상주시노인종합복지관
+      kr_relay: true  # 주소가 .com 이라 자동으로는 중계를 안 거치는데, 해외 접속엔 응답하지 않는다
       org_fixed: true
       include: [강사, 코치, 트레이너, 튜터, 멘토, 지도자, 강습, 방과후, 인력풀]
 
@@ -2394,6 +2395,7 @@ sources:
     verified: true
     options:
       org_name: 상주시노인종합복지관
+      kr_relay: true  # 주소가 .com 이라 자동으로는 중계를 안 거치는데, 해외 접속엔 응답하지 않는다
       org_fixed: true
 
   - id: yu_lifelong_notice

@@ -323,3 +323,19 @@ def test_relay_400_and_direct_failure_keeps_relay(monkeypatch):
         client.get("https://eminwon.bonghwa.go.kr/list")
     assert via == [True, False]
     assert "eminwon.bonghwa.go.kr" not in client._direct_hosts  # noqa: SLF001
+
+
+def test_kr_relay_option_routes_non_kr_host(monkeypatch):
+    """주소가 .kr 이 아니어도 kr_relay 를 켠 사이트는 국내 중계를 거친다 (상주시노인종합복지관 .com)."""
+    client = Http(min_interval=0, kr_proxy="http://u:p@1.2.3.4:8888")
+    via = []
+
+    def fake_request(method, url, **kwargs):
+        via.append("proxies" in kwargs)
+        return _Resp()
+
+    monkeypatch.setattr(client.session, "request", fake_request)
+    client.get("https://www.example.com/a")
+    client.setup_host("https://www.example.com/bbs", {"kr_relay": True})
+    client.get("https://www.example.com/b")
+    assert via == [False, True]

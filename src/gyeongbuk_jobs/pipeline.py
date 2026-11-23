@@ -216,7 +216,7 @@ def _collect_source(
     if not src.url and not src.collector.endswith("_api"):
         result.state, result.error = "설정필요", "url 없음"
         return result
-    if src.url and (src.options.get("legacy_tls") or src.options.get("short_headers")):
+    if src.url and any(src.options.get(k) for k in ("legacy_tls", "short_headers", "kr_relay")):
         http.setup_host(src.url, src.options)
     collector = collector_cls(src, http, today)
     log.info("수집: %s", src.name)

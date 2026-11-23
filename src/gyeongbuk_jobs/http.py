@@ -103,18 +103,21 @@ class Http:
         self._lock = threading.Lock()
         self.kr_proxy = (kr_proxy if kr_proxy is not None else os.environ.get("KR_PROXY_URL", "")).strip() or None
         self._direct_hosts: set[str] = set()  # 중계로 닿지 않아 바로 접속하는 사이트
+        self._relay_hosts: set[str] = set()  # .kr 이 아니어도 국내 중계를 거칠 사이트 (sources.yaml kr_relay)
 
     def allow_legacy_tls(self, host: str) -> None:
         """이 호스트에만 구형 TLS 설정(짧은 DH 키·구형 암호군·TLS 1.0/1.1)을 허용한다."""
         self.session.mount(f"https://{host}/", LegacyTLSAdapter(max_retries=self._retry))
 
     def setup_host(self, url: str, options: dict) -> None:
-        """sources.yaml 의 호스트별 연결 옵션을 적용한다 (legacy_tls, short_headers)."""
+        """sources.yaml 의 호스트별 연결 옵션을 적용한다 (legacy_tls, short_headers, kr_relay)."""
         host = urlsplit(url).hostname or ""
         if options.get("legacy_tls"):
             self.allow_legacy_tls(host)
         if options.get("short_headers"):
             self._short_headers.add(host)
+        if options.get("kr_relay"):
+            self._relay_hosts.add(host)
 
     def forget_unreachable(self) -> None:
         """접속 실패로 기억해 둔 서버를 잊는다 (실행 끝에서 한 번 더 시도하기 전에)."""
@@ -179,8 +182,11 @@ class Http:
         resp.raise_for_status()
         return resp
 
+    def _korean(self, host: str) -> bool:
+        return (host.endswith(".kr") or host in self._relay_hosts) and host not in self._direct_hosts
+
     def _via_relay(self, host: str, kwargs: dict) -> bool:
-        return bool(self.kr_proxy) and host.endswith(".kr") and host not in self._direct_hosts and "proxies" not in kwargs
+        return bool(self.kr_proxy) and self._korean(host) and "proxies" not in kwargs
 
     def _send(self, method: str, url: str, host: str, kwargs: dict) -> requests.Response:
         """한국 사이트는 국내 중계(KR_PROXY_URL)를 거쳐 보내고, 중계가 안 되면 바로 보낸다."""
@@ -229,7 +235,7 @@ class Http:
     def _bundle_with_intermediates(self, host: str, port: int) -> str | None:
         try:
             # 국내 중계를 쓰는 사이트는 인증서도 중계를 거쳐 받는다 (구미시립도서관처럼 해외에서 바로 붙으면 응답이 없는 곳)
-            via = self.kr_proxy if host.endswith(".kr") and host not in self._direct_hosts else None
+            via = self.kr_proxy if self._korean(host) else None
             pems = fetch_intermediate_pems(host, port, self.session, proxy=via)
         except Exception as exc:  # noqa: BLE001 - 보완 실패 시 원래 SSL 오류를 그대로 올린다
             log.warning("중간 인증서 보완 실패 %s: %s", host, exc)
